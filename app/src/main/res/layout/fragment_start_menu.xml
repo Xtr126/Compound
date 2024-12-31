@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:cardBackgroundColor="#48666666"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.Material3.CardView.Filled"
+    app:cardCornerRadius="40dp">
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp"
+    tools:theme="@style/Theme.Material3.Dark"
+
+    tools:context=".StartMenuFragment">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="60dp"
+        android:layout_height="200dp"
+        android:layout_marginLeft="10dp"
+        app:cardBackgroundColor="@color/cardBackgroundTranslucent"
+        style="@style/Widget.Material3.CardView.Filled"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="40dp"
+        app:contentPaddingBottom="10dp"
+        app:contentPaddingTop="10dp"
+        android:id="@+id/cardView3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/cardView1"
+        app:layout_constraintLeft_toLeftOf="parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom"
+            android:orientation="vertical">
+            <ImageButton
+                android:background="@android:color/transparent"
+                app:tint="?android:textColorPrimary"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                app:srcCompat="@drawable/outline_settings_24" />
+            <ImageButton
+                android:background="@android:color/transparent"
+                app:tint="?android:textColorPrimary"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                app:srcCompat="@drawable/baseline_folder_open_24" />
+            <ImageButton
+                android:background="@android:color/transparent"
+                app:tint="?android:textColorPrimary"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                app:srcCompat="@android:drawable/ic_lock_power_off" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="160dp"
+        android:layout_height="0dp"
+        android:layout_margin="20dp"
+        app:contentPadding="8dp"
+        android:id="@+id/cardView1"
+        style="@style/Widget.Material3.CardView.Filled"
+        app:layout_constraintRight_toLeftOf="@id/cardView2"
+        app:cardBackgroundColor="@color/cardBackgroundTranslucent"
+
+        app:layout_constraintLeft_toRightOf="@id/cardView3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent" >
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/apps_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:listitem="@layout/app_list_item"
+            android:visibility="visible"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="20dp"
+        app:contentPaddingLeft="24dp"
+        app:contentPaddingRight="24dp"
+        style="@style/Widget.Material3.CardView.Filled"
+        app:cardBackgroundColor="@color/cardBackgroundTranslucent"
+        android:id="@+id/cardView2"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/cardView1"
+        app:layout_constraintTop_toTopOf="parent" >
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/apps_grid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:listitem="@layout/app_grid_item"
+            android:visibility="visible"
+            app:spanCount="3"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" />
+
+    </com.google.android.material.card.MaterialCardView>
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
