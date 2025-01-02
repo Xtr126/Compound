@@ -24,7 +24,7 @@
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="60dp"
-        android:layout_height="200dp"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
         app:cardBackgroundColor="@color/cardBackgroundTranslucent"
         style="@style/Widget.Material3.CardView.Filled"
@@ -41,24 +41,47 @@
             android:layout_height="match_parent"
             android:gravity="bottom"
             android:orientation="vertical">
-            <ImageButton
-                android:background="@android:color/transparent"
-                app:tint="?android:textColorPrimary"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                app:srcCompat="@drawable/outline_settings_24" />
-            <ImageButton
-                android:background="@android:color/transparent"
-                app:tint="?android:textColorPrimary"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                app:srcCompat="@drawable/baseline_folder_open_24" />
-            <ImageButton
-                android:background="@android:color/transparent"
-                app:tint="?android:textColorPrimary"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                app:srcCompat="@android:drawable/ic_lock_power_off" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settingsButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:icon="@drawable/outline_settings_24"
+                app:iconPadding="0dp"
+                app:iconSize="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/editButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:icon="@drawable/baseline_edit_24"
+                app:iconPadding="0dp"
+                app:iconSize="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/folderButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:icon="@drawable/baseline_folder_open_24"
+                app:iconPadding="0dp"
+                app:iconSize="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/powerButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:icon="@android:drawable/ic_lock_power_off"
+                app:iconPadding="0dp"
+                app:iconSize="24dp" />
+
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

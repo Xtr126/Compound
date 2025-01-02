@@ -1,12 +1,8 @@
 package xtr.compound
 
 import android.annotation.SuppressLint
-import android.app.WallpaperManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.RenderEffect
-import android.graphics.RenderNode
 import android.graphics.Shader
 import android.os.Bundle
 import android.os.Handler
@@ -14,17 +10,11 @@ import android.os.Looper
 import android.view.PixelCopy
 import android.view.View
 import android.view.WindowInsets
-import android.view.WindowMetrics
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.drawable.toDrawable
-import androidx.core.graphics.scale
-import androidx.core.view.drawToBitmap
 import androidx.recyclerview.widget.RecyclerView
-import androidx.transition.Visibility
 import xtr.compound.databinding.ActivityFullscreenBinding
 
 /**
@@ -54,14 +44,13 @@ class MainActivity : AppCompatActivity() {
         fullscreenContent = binding.root
         setContentView(fullscreenContent)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         isFullscreen = true
 
-        val adapter = AppsGridAdapter(this, R.layout.app_taskbar_item);
-        findViewById<RecyclerView>(R.id.taskbarApps).setAdapter(adapter);
+        val adapter = AppsGridAdapter(this, R.layout.app_taskbar_item)
+        findViewById<RecyclerView>(R.id.taskbarApps).setAdapter(adapter)
 
-        binding.startMenu.appsList.setAdapter(AppsGridAdapter(this, R.layout.app_list_item));
-        binding.startMenu.appsGrid.setAdapter(AppsGridAdapter(this, R.layout.app_grid_item));
+        binding.startMenu.appsList.setAdapter(AppsGridAdapter(this, R.layout.app_list_item))
+        binding.startMenu.appsGrid.setAdapter(AppsGridAdapter(this, R.layout.app_grid_item))
 
         binding.startMenuButton.setOnClickListener { onStartMenuButtonClicked() }
         blurTaskbarBackground()
@@ -112,23 +101,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        super.onPostCreate(savedInstanceState)
-
-        // Trigger the initial hide() shortly after the activity has been
-        // created, to briefly hint to the user that UI controls
-        // are available.
+    override fun onResume() {
+        super.onResume()
         delayedHide(100)
-
-    }
-
-    // show or hide the system UI.
-    private fun toggle() {
-        if (isFullscreen) {
-            hide()
-        } else {
-            show()
-        }
     }
 
     private fun hide() {
