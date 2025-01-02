@@ -8,12 +8,12 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,8 +52,10 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
     public void onBindViewHolder(RecyclerViewHolder holder, int position) {
         // Set the data to textview and imageview.
         RecyclerData recyclerData = appsDataArrayList.get(position);
-        if (holder.appName != null) holder.appName.setText(recyclerData.title);
-        holder.appIcon.setImageDrawable(recyclerData.icon);
+        if (holder.itemView instanceof MaterialButton) {
+            ((MaterialButton) holder.itemView).setIcon(recyclerData.icon);
+            if (resource != R.layout.app_taskbar_item) ((MaterialButton) holder.itemView).setText(recyclerData.title);
+        }
     }
 
     @Override
@@ -65,13 +67,8 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
     // View Holder Class to handle Recycler View.
     public class RecyclerViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-        public final TextView appName;
-        public final ImageView appIcon;
-
         public RecyclerViewHolder(View view) {
             super(view);
-            appName = view.findViewById(R.id.app_name);
-            appIcon = view.findViewById(R.id.app_icon);
             view.setOnClickListener(this);
         }
 

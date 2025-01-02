@@ -1,26 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal">
-
-    <ImageButton
-        android:id="@+id/app_icon"
-        android:layout_width="40dp"
-        android:background="@android:color/transparent"
-        android:layout_height="40dp"
-        android:layout_gravity="center_horizontal"
-        android:padding="8dp"
-        android:scaleType="fitCenter"
-        android:src="@mipmap/ic_launcher" />
-
-    <TextView
-        android:id="@+id/app_name"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center|start"
-        android:text="@string/app_name"
-        android:textColor="?colorOnSurface" />
-
-
-</LinearLayout>
+    android:layout_height="40dp"
+    android:gravity="left|center"
+    android:textColor="?colorOnSurface"
+    android:textAlignment="gravity"
+    android:textAppearance="@style/TextAppearance.AppCompat"
+    app:icon="@mipmap/ic_launcher"
+    style="@style/Widget.Material3.Button.TextButton"
+    app:iconTintMode="multiply"
+    app:iconSize="24dp"
+    app:iconPadding="8dp"
+    tools:text="Compound" />

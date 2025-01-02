@@ -1,27 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical">
-        <ImageButton
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_gravity="center_horizontal"
-            android:background="@android:color/transparent"
-            android:padding="10dp"
-            android:id="@+id/app_icon"
-            android:scaleType="fitCenter"
-            tools:src="@mipmap/ic_launcher"
-            />
-
-        <TextView
-            android:id="@+id/app_name"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:textAlignment="center"
-            tools:text="@string/app_name"
-            android:textColor="?colorOnSurface"
-            />
-</LinearLayout>
+    android:layout_width="match_parent"
+    android:layout_height="80dp"
+    app:iconGravity="top"
+    android:textAppearance="@style/TextAppearance.AppCompat"
+    android:textColor="?colorOnSurface"
+    app:icon="@mipmap/ic_launcher"
+    style="@style/Widget.Material3.Button.TextButton"
+    app:iconTintMode="multiply"
+    app:iconSize="40dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="0dp"
+    tools:text="Compound" />
