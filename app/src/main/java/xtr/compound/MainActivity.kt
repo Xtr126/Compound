@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun blurTaskbarBackground() {
-        pixelCopyAndBlur(binding.taskbar, binding.taskbarBackground, 40f)
+        pixelCopyAndBlur(binding.taskbar, binding.taskbarBackground, 30f)
     }
 
 
@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         val imageView = binding.startMenu.imageView2
 
         if (startMenuView.visibility == View.INVISIBLE) {
-            pixelCopyAndBlur(startMenuView, imageView, 40f)
+            pixelCopyAndBlur(startMenuView, imageView, 30f)
         } else {
             startMenuView.visibility = View.INVISIBLE
         }
@@ -113,15 +113,6 @@ class MainActivity : AppCompatActivity() {
 
         // Schedule a runnable to remove the status and navigation bar after a delay
         hideHandler.postDelayed(hidePart2Runnable, UI_ANIMATION_DELAY.toLong())
-    }
-
-    private fun show() {
-        // Show the system bar
-        fullscreenContent.windowInsetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-        isFullscreen = true
-
-        // Schedule a runnable to display UI elements after a delay
-        hideHandler.removeCallbacks(hidePart2Runnable)
     }
 
     /**
