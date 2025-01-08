@@ -3,7 +3,7 @@
     android:layout_width="52dp"
     android:layout_height="wrap_content"
     tools:icon="@mipmap/ic_launcher"
-    app:iconTintMode="multiply"
+    app:iconTint="@null"
     app:iconSize="40dp"
     android:paddingHorizontal="2dp"
     style="@style/Widget.Material3.Button.IconButton"
