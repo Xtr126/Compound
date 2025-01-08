@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Compound"
 include(":app")
- 
+include(":app:hidden-api")
