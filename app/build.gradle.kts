@@ -35,17 +35,27 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        aidl = true
+        buildConfig = true
     }
 }
 
 dependencies {
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
+
+    implementation(libs.libsu.core)
+    implementation(libs.libsu.service)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    compileOnly(project(":app:hidden-api"))
 }
