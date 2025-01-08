@@ -10,7 +10,7 @@
     app:cardCornerRadius="40dp">
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/background"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
@@ -18,9 +18,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="10dp"
-    tools:theme="@style/Theme.Material3.Dark"
-
-    tools:context=".StartMenuFragment">
+    tools:theme="@style/Theme.Material3.Dark">
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="60dp"
