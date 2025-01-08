@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <!-- Base application theme. -->
     <style name="Theme.Compound" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
@@ -7,8 +7,6 @@
 
 
     <style name="Theme.Compound.Fullscreen" parent="Theme.Compound">
-        <item name="android:actionBarStyle">@style/Widget.Theme.Compound.ActionBar.Fullscreen</item>
-        <item name="android:windowActionBarOverlay">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
