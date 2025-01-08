@@ -50,11 +50,17 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
 
     @Override
     public void onBindViewHolder(RecyclerViewHolder holder, int position) {
-        // Set the data to textview and imageview.
+        // Set the icon and text for the button from data.
         RecyclerData recyclerData = appsDataArrayList.get(position);
         if (holder.itemView instanceof MaterialButton) {
-            ((MaterialButton) holder.itemView).setIcon(recyclerData.icon);
-            if (resource != R.layout.app_taskbar_item) ((MaterialButton) holder.itemView).setText(recyclerData.title);
+            MaterialButton button = (MaterialButton) holder.itemView;
+            button.setIcon(recyclerData.icon);
+
+            if (resource != R.layout.app_taskbar_item) {
+                button.setText(recyclerData.title);
+            } else {
+                button.setTooltipText(recyclerData.title);
+            }
         }
     }
 
