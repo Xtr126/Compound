@@ -7,6 +7,14 @@
     android:background="@drawable/wallpaper"
     tools:context=".MainActivity">
 
+    <FrameLayout
+        android:id="@+id/appsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:animateLayoutChanges="true">
+
+    </FrameLayout>
+
     <include
         android:id="@+id/startMenu"
         layout="@layout/start_menu_layout"
@@ -26,6 +34,7 @@
         android:id="@+id/taskbarBackground"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:importantForAccessibility="no"
         android:orientation="horizontal"
         android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"

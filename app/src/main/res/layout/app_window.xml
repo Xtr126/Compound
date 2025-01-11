@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="400dp"
+    android:layout_height="600dp"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Material3.CardView.Filled"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <LinearLayout
+            android:id="@+id/linearLayout"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/title"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="4dp"
+                android:layout_weight="1"
+                android:padding="0dp"
+                android:textAlignment="viewStart"
+                app:iconPadding="8dp"
+                app:iconSize="24dp"
+                app:iconTint="@null"
+                tools:icon="@mipmap/ic_launcher"
+                tools:text="@string/app_name" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/minimizeButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                app:icon="@drawable/sharp_keyboard_arrow_down_24"
+                app:iconSize="28dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/maximizeButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                app:icon="@drawable/baseline_zoom_out_map_24" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/closeButton"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                app:icon="@android:drawable/ic_delete" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:id="@+id/surfaceViewContainer"
+            app:layout_constraintTop_toBottomOf="@id/linearLayout"
+            app:layout_constraintBottom_toTopOf="@id/borderBottom"
+            app:layout_constraintLeft_toRightOf="@id/borderLeft"
+            app:layout_constraintRight_toLeftOf="@+id/borderRight"
+            >
+
+            <SurfaceView
+                android:id="@+id/surfaceView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <View
+            android:id="@+id/borderBottom"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:focusableInTouchMode="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/surfaceViewContainer" />
+
+        <View
+            android:id="@+id/borderLeft"
+            android:layout_width="4dp"
+            android:layout_height="0dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:focusableInTouchMode="true"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/surfaceViewContainer"
+            app:layout_constraintBottom_toBottomOf="@id/surfaceViewContainer"
+            app:layout_constraintTop_toBottomOf="@id/linearLayout" />
+
+        <View
+            android:id="@+id/borderRight"
+            android:layout_width="4dp"
+            android:layout_height="0dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:focusableInTouchMode="true"
+            app:layout_constraintLeft_toRightOf="@id/surfaceViewContainer"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/surfaceViewContainer"
+            app:layout_constraintTop_toBottomOf="@id/linearLayout" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -8,7 +8,7 @@ public class ServiceManager {
      * @return a reference to the service, or <code>null</code> if the service doesn't exist
      */
     public static IBinder getService(String name) {
-        throw new RuntimeException("STUB");
+        throw new RuntimeException("Stub!");
     }
 
     /**
@@ -19,6 +19,6 @@ public class ServiceManager {
      * @param service the service object
      */
     public static void addService(String name, IBinder service) throws Exception {
-        throw new RuntimeException("STUB");
+        throw new RuntimeException("Stub!");
     }
 }
