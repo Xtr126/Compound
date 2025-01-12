@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="400dp"
     android:layout_height="600dp"
+    android:layout_gravity="center"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.Material3.CardView.Filled"
@@ -23,6 +24,7 @@
                 android:id="@+id/title"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="0dp"
+                android:focusable="false"
                 android:layout_height="match_parent"
                 android:layout_marginLeft="4dp"
                 android:layout_weight="1"
@@ -37,6 +39,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/minimizeButton"
+                android:focusable="false"
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -44,6 +47,7 @@
                 app:iconSize="28dp" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/maximizeButton"
+                android:focusable="false"
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -53,6 +57,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/closeButton"
                 style="@style/Widget.Material3.Button.IconButton"
+                android:focusable="false"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 app:icon="@android:drawable/ic_delete" />
@@ -70,6 +75,7 @@
 
             <SurfaceView
                 android:id="@+id/surfaceView"
+                android:focusable="false"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </com.google.android.material.card.MaterialCardView>

@@ -124,6 +124,11 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
                         );
                         binding.surfaceView.setOnTouchListener(virtualDisplayHelper);
                         binding.surfaceView.setOnGenericMotionListener(virtualDisplayHelper);
+                        binding.maximizeButton.setOnClickListener(v -> {
+                            binding.getRoot().getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
+                            binding.getRoot().getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
+                            binding.getRoot().requestLayout();
+                        });
                         binding.closeButton.setOnClickListener(v -> {
                             virtualDisplayHelper.closeApp();
                             binding.getRoot().removeAllViews();
