@@ -104,8 +104,13 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
 
             AppWindowBinding binding = AppWindowBinding.inflate(LayoutInflater.from(context), appsContainer, true);
             binding.title.setOnTouchListener(new MovableFrameLayout(binding.getRoot()));
+            binding.title.setOnClickListener(v -> {
+                appsContainer.removeView(binding.getRoot());
+                appsContainer.addView(binding.getRoot());
+            });
             binding.title.setText(appsDataArrayList.get(i).title);
             binding.title.setIcon(appsDataArrayList.get(i).icon.mutate());
+
             binding.surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
                 VirtualDisplayHelper virtualDisplayHelper;
                 @Override
@@ -119,9 +124,6 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
                                 launchIntent
                         );
                         binding.surfaceView.setOnTouchListener(virtualDisplayHelper);
-                        binding.getRoot().setOnKeyListener(virtualDisplayHelper);
-                        binding.title.setOnKeyListener(virtualDisplayHelper);
-                        binding.surfaceView.setOnKeyListener(virtualDisplayHelper);
                         binding.surfaceView.setOnGenericMotionListener(virtualDisplayHelper);
                         binding.closeButton.setOnClickListener(v -> {
                             virtualDisplayHelper.closeApp();

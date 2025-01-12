@@ -55,8 +55,6 @@ class MainActivity : AppCompatActivity() {
 
         isFullscreen = true
 
-        enableEdgeToEdge()
-
         setupRecyclerViewAdapters()
 
         setupButtonTint()
