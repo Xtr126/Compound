@@ -5,9 +5,12 @@ import android.content.ContextWrapper;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
+import android.view.InputEvent;
 import android.view.Surface;
 
 import androidx.annotation.NonNull;
+
+import java.lang.reflect.InvocationTargetException;
 
 public class VirtualDisplayUtils {
 
@@ -71,6 +74,14 @@ public class VirtualDisplayUtils {
     public static void releaseVirtualDisplay(VirtualDisplay virtualDisplay) {
         if (virtualDisplay != null) {
             virtualDisplay.release();
+        }
+    }
+
+    public static void setDisplayId(InputEvent event, int displayId) {
+        try {
+            InputEvent.class.getMethod("setDisplayId", int.class).invoke(event, displayId);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -8,7 +8,6 @@ import android.view.Surface
 import android.view.View
 import android.view.View.OnGenericMotionListener
 import android.view.View.OnTouchListener
-import android.view.WindowManagerGlobal
 
 class VirtualDisplayHelper (
     private val mService: IRemoteService,
@@ -18,11 +17,11 @@ class VirtualDisplayHelper (
     launchIntent: Intent
 ) : OnTouchListener, View.OnKeyListener, OnGenericMotionListener {
 
-    private var dpi: Int = WindowManagerGlobal.getWindowManagerService().getBaseDisplayDensity(Display.DEFAULT_DISPLAY)
+    private var dpi: Int = mService.getBaseDisplayDensity(Display.DEFAULT_DISPLAY)
 
     private var displayId: Int = mService.renderAppToSurface(launchIntent, surface, width, height, dpi)
 
-    private var inputTransformer: InputTransformer = InputTransformer(width, height, displayId)
+    private var inputTransformer: InputTransformer = InputTransformer(mService, width, height, displayId)
 
     fun closeApp() {
         displayId.let { mService.releaseVirtualDisplay(it) }
@@ -35,20 +34,18 @@ class VirtualDisplayHelper (
     }
 
     override fun onGenericMotion(v: View, event: MotionEvent): Boolean {
-        InputTransformer.setDisplayId(event, displayId)
-        mService.injectInputEvent(event)
+        mService.injectInputEvent(event, displayId)
         return true
     }
 
     override fun onKey(v: View, keyCode: Int, event: KeyEvent): Boolean {
-        InputTransformer.setDisplayId(event, displayId)
-        mService.injectInputEvent(event)
+        mService.injectInputEvent(event, displayId)
         return true
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         inputTransformer.transformTouchEvent(event)
-        mService.injectInputEvent(event)
+        mService.injectInputEvent(event, displayId)
         return true
     }
 }

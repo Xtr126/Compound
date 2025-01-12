@@ -5,6 +5,7 @@ package xtr.compound;
 import android.view.Surface;
 import android.content.Intent;
 import android.view.InputEvent;
+import android.graphics.Point;
 
 interface IRemoteService {
     /**
@@ -23,5 +24,9 @@ interface IRemoteService {
 
     void showPowerMenu();
 
-    void injectInputEvent(in InputEvent event);
+    void injectInputEvent(in InputEvent event, int displayId);
+
+    int getBaseDisplayDensity(int displayId);
+
+    void getBaseDisplaySize(int displayId, out Point baseSize);
 }

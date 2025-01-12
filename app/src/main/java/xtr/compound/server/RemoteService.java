@@ -2,11 +2,14 @@ package xtr.compound.server;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Point;
 import android.hardware.display.VirtualDisplay;
 import android.os.RemoteException;
 import android.util.Log;
+import android.view.Display;
 import android.view.InputEvent;
 import android.view.Surface;
+import android.view.WindowManagerGlobal;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,12 +98,21 @@ public class RemoteService extends IRemoteService.Stub {
             Runtime.getRuntime().exec("input keyevent --longpress POWER");
         } catch (IOException ignored) {
         }
-        Log.e(this.getClass().getName(), "showPowerMenu");
     }
 
     @Override
-    public void injectInputEvent(InputEvent event) throws RemoteException {
+    public void injectInputEvent(InputEvent event, int displayId) {
+        VirtualDisplayUtils.setDisplayId(event, displayId);
         Input.injectInputEvent(event);
     }
 
+    @Override
+    public int getBaseDisplayDensity(int displayId) throws RemoteException {
+        return WindowManagerGlobal.getWindowManagerService().getBaseDisplayDensity(Display.DEFAULT_DISPLAY);
+    }
+
+    @Override
+    public void getBaseDisplaySize(int displayId, Point baseSize) throws RemoteException {
+        WindowManagerGlobal.getWindowManagerService().getBaseDisplaySize(displayId, baseSize);
+    }
 }
