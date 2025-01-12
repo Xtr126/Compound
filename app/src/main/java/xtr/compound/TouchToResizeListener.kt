@@ -13,21 +13,26 @@ class TouchToResizeListener(private val parentView: View, private val type: Int)
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 // Record initial touch position and dimensions
-                if (type == HORIZONTAL) {
+                if (type == HORIZONTAL_LEFT || type === HORIZONTAL_RIGHT) {
                     initialX = event.rawX.toInt()
                     initialWidth = parentView.width
-                } else {
+                }
+                else {
                     initialY = event.rawY.toInt()
                     initialHeight = parentView.height
                 }
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
-                if (type == HORIZONTAL) {
+                if (type == HORIZONTAL_RIGHT) {
                     val deltaX = event.rawX.toInt() - initialX
                     val newWidth = initialWidth + deltaX
                     parentView.layoutParams.width = newWidth.coerceAtLeast(100) // Minimum width
-                } else {
+                } else if (type == HORIZONTAL_LEFT) {
+                    val deltaX = event.rawX.toInt() - initialX
+                    val newWidth = initialWidth - deltaX
+                    parentView.layoutParams.width = newWidth.coerceAtLeast(100) // Minimum width
+                } else if (type == VERTICAL) {
                     val deltaY = event.rawY.toInt() - initialY
                     val newHeight = initialHeight + deltaY
                     parentView.layoutParams.height = newHeight.coerceAtLeast(100) // Minimum height
@@ -39,7 +44,8 @@ class TouchToResizeListener(private val parentView: View, private val type: Int)
         return false
     }
     companion object {
-        const val HORIZONTAL = 0;
-        const val VERTICAL = 1;
+        const val HORIZONTAL_LEFT = 0
+        const val HORIZONTAL_RIGHT = 1
+        const val VERTICAL = 2
     }
 }

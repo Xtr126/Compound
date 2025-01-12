@@ -20,9 +20,12 @@ public class MovableFrameLayout implements View.OnTouchListener {
             case MotionEvent.ACTION_DOWN: {
                 dX = frameLayout.getX() - motionEvent.getRawX();
                 dY = frameLayout.getY() - motionEvent.getRawY();
-                view.performClick();
                 return true; // Consumed
             }
+            case MotionEvent.ACTION_UP:
+                view.performClick();
+                return true;
+
             case MotionEvent.ACTION_MOVE: {
                 int viewWidth = frameLayout.getWidth();
                 int viewHeight = frameLayout.getHeight();

@@ -104,14 +104,16 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
             AppWindowBinding binding = AppWindowBinding.inflate(LayoutInflater.from(context), appsContainer, true);
             binding.title.setOnTouchListener(new MovableFrameLayout(binding.getRoot()));
             binding.title.setOnClickListener(v -> {
-                appsContainer.removeView(binding.getRoot());
-                appsContainer.addView(binding.getRoot());
+                binding.getRoot().bringToFront();
+                binding.surfaceViewContainer.removeView(binding.surfaceView);
+                binding.surfaceViewContainer.addView(binding.surfaceView);
             });
             binding.title.setText(appsDataArrayList.get(i).title);
             binding.title.setIcon(appsDataArrayList.get(i).icon.mutate());
 
             binding.surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
                 VirtualDisplayHelper virtualDisplayHelper;
+
                 @Override
                 public void surfaceCreated(@NonNull SurfaceHolder holder) {
                     RemoteServiceHelper.getInstance(context, service -> {
@@ -124,6 +126,8 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
                         );
                         binding.surfaceView.setOnTouchListener(virtualDisplayHelper);
                         binding.surfaceView.setOnGenericMotionListener(virtualDisplayHelper);
+                        binding.surfaceView.setOnKeyListener(virtualDisplayHelper);
+                        binding.surfaceView.setFocusable(true);
                         binding.maximizeButton.setOnClickListener(v -> {
                             binding.getRoot().getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
                             binding.getRoot().getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -134,8 +138,8 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
                             binding.getRoot().removeAllViews();
                             appsContainer.removeView(binding.getRoot());
                         });
-                        binding.borderLeft.setOnTouchListener(new TouchToResizeListener(binding.getRoot(), TouchToResizeListener.HORIZONTAL));
-                        binding.borderRight.setOnTouchListener(new TouchToResizeListener(binding.getRoot(), TouchToResizeListener.HORIZONTAL));
+                        binding.borderLeft.setOnTouchListener(new TouchToResizeListener(binding.getRoot(), TouchToResizeListener.HORIZONTAL_LEFT));
+                        binding.borderRight.setOnTouchListener(new TouchToResizeListener(binding.getRoot(), TouchToResizeListener.HORIZONTAL_RIGHT));
                         binding.borderBottom.setOnTouchListener(new TouchToResizeListener(binding.getRoot(), TouchToResizeListener.VERTICAL));
 
                         binding.borderBottom.setPointerIcon(PointerIcon.getSystemIcon(context, PointerIcon.TYPE_VERTICAL_DOUBLE_ARROW));
@@ -154,6 +158,7 @@ public class AppsGridAdapter extends RecyclerView.Adapter<AppsGridAdapter.Recycl
                 public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 
                 }
+
             });
         }
     }

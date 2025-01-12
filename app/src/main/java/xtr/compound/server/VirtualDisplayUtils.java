@@ -1,15 +1,13 @@
 package xtr.compound.server;
 
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
 import android.view.InputEvent;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class VirtualDisplayUtils {
@@ -26,23 +24,16 @@ public class VirtualDisplayUtils {
     private static final int VIRTUAL_DISPLAY_FLAG_OWN_FOCUS = 1 << 14;
     private static final int VIRTUAL_DISPLAY_FLAG_DEVICE_DISPLAY_GROUP = 1 << 15;
 
-    private final DisplayManager displayManager;
+    private final Context context;
 
     public VirtualDisplayUtils(Context context) {
-        // Initialize the DisplayManager
-        this.displayManager = new ContextWrapper(context) {
-            @NonNull
-            @Override
-            public String getOpPackageName() {
-                return "com.android.shell";
-            }
-        }.getSystemService(DisplayManager.class);
 
+        this.context = context;
     }
 
-    public VirtualDisplay createVirtualDisplay(Surface surface, int width, int height, int dpi) {
+    public VirtualDisplay createVirtualDisplay(Surface surface, int width, int height, int dpi) throws Exception {
         // Create the virtual display
-        return displayManager.createVirtualDisplay(
+        return createNewVirtualDisplay(
                 "Virtual", // Name of the virtual display
                 width,       // Virtual display width
                 height,      // Virtual display height
@@ -50,6 +41,13 @@ public class VirtualDisplayUtils {
                 surface,     // Surface where content will be rendered
                 getFlags()  // flags for mirroring
         );
+    }
+
+    public VirtualDisplay createNewVirtualDisplay(String name, int width, int height, int dpi, Surface surface, int flags) throws Exception {
+        Constructor<DisplayManager> ctor = android.hardware.display.DisplayManager.class.getDeclaredConstructor(Context.class);
+        ctor.setAccessible(true);
+        android.hardware.display.DisplayManager dm = ctor.newInstance(context);
+        return dm.createVirtualDisplay(name, width, height, dpi, surface, flags);
     }
 
     private int getFlags() {

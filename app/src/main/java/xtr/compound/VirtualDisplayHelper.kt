@@ -2,10 +2,12 @@ package xtr.compound
 
 import android.content.Intent
 import android.view.Display
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
 import android.view.View.OnGenericMotionListener
+import android.view.View.OnKeyListener
 import android.view.View.OnTouchListener
 
 class VirtualDisplayHelper (
@@ -14,7 +16,7 @@ class VirtualDisplayHelper (
     private var height: Int,
     surface: Surface,
     launchIntent: Intent
-) : OnTouchListener, OnGenericMotionListener {
+) : OnTouchListener, OnGenericMotionListener, OnKeyListener {
 
     private var dpi: Int = mService.getBaseDisplayDensity(Display.DEFAULT_DISPLAY)
 
@@ -40,6 +42,11 @@ class VirtualDisplayHelper (
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         inputTransformer.transformTouchEvent(event)
+        mService.injectInputEvent(event, displayId)
+        return true
+    }
+
+    override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
         mService.injectInputEvent(event, displayId)
         return true
     }
