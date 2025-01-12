@@ -15,7 +15,6 @@ import android.view.PixelCopy
 import android.view.View
 import android.view.WindowInsets
 import android.widget.ImageView
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
