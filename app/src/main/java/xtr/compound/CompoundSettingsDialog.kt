@@ -163,6 +163,7 @@ object CompoundSettingsDialog {
                 helper.onAvailabilityChanged = { refreshAvailability() }
                 helper.update(settings.opacityPercent, settings.blurRadiusDp)
             }
+            refreshAvailability()
             background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
                 if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacy.refresh()
             }
