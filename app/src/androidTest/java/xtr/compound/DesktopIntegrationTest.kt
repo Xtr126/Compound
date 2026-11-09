@@ -127,6 +127,42 @@ class DesktopIntegrationTest {
         }
     }
 
+    /** Background redraws must not repeatedly hide the taskbar or an open start menu. */
+    @Test fun desktopControlsRemainVisibleAfterFallbackLayout() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+            // Allow the initial capture to finish or time out before testing steady visibility.
+            Thread.sleep(600)
+            var taskbarSnapshot: android.graphics.drawable.Drawable? = null
+            scenario.onActivity { activity ->
+                assertEquals(1f, activity.findViewById<View>(R.id.taskbar).alpha, 0f)
+                val background = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
+                taskbarSnapshot = background.drawable
+                repeat(4) { background.requestLayout() }
+                activity.findViewById<View>(R.id.startMenuButton).performClick()
+            }
+            Thread.sleep(600)
+            scenario.onActivity { activity ->
+                val taskbar = activity.findViewById<View>(R.id.taskbar)
+                val menu = activity.findViewById<View>(R.id.startMenu)
+                assertEquals(View.VISIBLE, taskbar.visibility)
+                assertEquals(1f, taskbar.alpha, 0f)
+                assertEquals(View.VISIBLE, menu.visibility)
+                assertEquals(1f, menu.alpha, 0f)
+                assertSame("Unchanged bounds must not recapture the taskbar", taskbarSnapshot,
+                    activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground).drawable)
+                menu.requestLayout()
+            }
+            Thread.sleep(600)
+            scenario.onActivity { activity ->
+                assertEquals(1f, activity.findViewById<View>(R.id.startMenu).alpha, 0f)
+                assertEquals(1f, activity.findViewById<View>(R.id.taskbar).alpha, 0f)
+            }
+        }
+    }
+
     /** Service-side failures must survive Parcel's exception encoding used by Binder. */
     @Test fun taskServiceErrorsSurviveBinderParcel() {
         val method = xtr.compound.server.RemoteService::class.java.getDeclaredMethod(

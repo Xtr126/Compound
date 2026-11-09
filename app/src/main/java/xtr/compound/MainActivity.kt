@@ -73,11 +73,11 @@ class MainActivity : AppCompatActivity() {
         legacyMenuBlur = LegacyBackgroundBlur(binding.startMenu.background, binding.startMenu.root, window)
         taskbarBlur = LiveBackgroundBlur(binding.taskbarBackground, legacy = legacyTaskbarBlur)
         menuBlur = LiveBackgroundBlur(binding.startMenu.background, 40f, legacyMenuBlur)
-        binding.taskbarBackground.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            legacyTaskbarBlur.refresh()
+        binding.taskbarBackground.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacyTaskbarBlur.refresh()
         }
-        binding.startMenu.background.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            legacyMenuBlur.refresh()
+        binding.startMenu.background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacyMenuBlur.refresh()
         }
         taskbarBlur.onAvailabilityChanged = { refreshAppearanceAvailability() }
         menuBlur.onAvailabilityChanged = { refreshAppearanceAvailability() }

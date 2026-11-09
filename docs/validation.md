@@ -32,3 +32,7 @@ Results from the implementation run are recorded below before delivery. A build 
 - The initial screen-off attempt failed visible-surface checks. After waking the device, a synthetic-view alpha assertion exposed the test container's enter animation; the test disables that animation. The final run passed all six tests.
 - Live blur is unavailable on this device. Enabled compositor blur, Android 12, root/system-app mode, denial/restart, and resized input remain unverified. Snapshot blur is static between refreshes and may briefly hide taskbar/menu overlays during capture; protected content may not be captured.
 - CI's failed job log confirmed setup-android's default `tools` package caused SDK setup to exit before Gradle. The workflow now requests `platform-tools` explicitly; a fresh hosted CI run is still required.
+
+### Visibility regression follow-up — 2026-11-09
+
+Snapshot installation can request layout without changing bounds. Refreshing on every such layout could repeatedly hide the taskbar/menu while recapturing. Refresh listeners now require a real geometry change. Captures cancel queued frame work and restore alpha on disable/close or after a 250 ms timeout; stale copy results are discarded. Required build, nine unit tests, lint and instrumentation APK compilation passed. Samsung SM-A155F / API 36 / Shizuku shell: **OK (7 tests)**, including a new real-desktop check that the taskbar and open start menu remain visible across unchanged layout requests. Live compositor blur remains unavailable on this device.

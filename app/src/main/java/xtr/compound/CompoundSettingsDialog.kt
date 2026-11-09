@@ -163,7 +163,9 @@ object CompoundSettingsDialog {
                 helper.onAvailabilityChanged = { refreshAvailability() }
                 helper.update(settings.opacityPercent, settings.blurRadiusDp)
             }
-            background.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> legacy.refresh() }
+            background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacy.refresh()
+            }
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 settings.resetAppearance()
                 opacity.value = AppearanceSettings.DEFAULT_OPACITY.toFloat()

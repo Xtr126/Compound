@@ -13,3 +13,5 @@ The fallback temporarily hides its overlay for a compositor frame before copying
 Manual checks: test opacity 0/50/100 and radius 0/25/100 with live blur enabled and disabled, menu reopen after moving a hosted window, workspace resize, and switching blur availability during a capture. Confirm icons and text remain sharp and opaque.
 
 The Compound settings dialog uses the same helper on a dedicated background image spanning its title, content and buttons. Its rounded panel clips the background; foreground controls stay unblurred. The legacy dialog snapshot copies the underlying Activity window directly, without hiding dialog controls. Both sliders and reset apply to all three backgrounds immediately. Dismissal closes its helper.
+
+Unchanged layout bounds do not trigger another snapshot: installing a bitmap can request layout, so treating every layout pass as a refresh would create a capture/hide loop. Each capture has a 250 ms watchdog which restores the overlay and image alpha and invalidates late callbacks if frame/copy completion stalls. Disabling fallback or closing the helper also cancels queued capture work immediately.

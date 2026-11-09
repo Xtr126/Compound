@@ -26,6 +26,9 @@ class LegacyBackgroundBlur(
     private var closed = false
     private var enabled = false
     private var generation = 0
+    private val handler = Handler(Looper.getMainLooper())
+    private var captureFrame: Runnable? = null
+    private val captureTimeout = Runnable { cancelCapture() }
     private var restoreAlpha: Float? = null
     private var restoreImageAlpha: Float? = null
     private var tint = 0
@@ -36,8 +39,7 @@ class LegacyBackgroundBlur(
         this.tint = tint
         this.radius = radius
         if (!enabled) {
-            generation++
-            restoreOverlay()
+            cancelCapture()
             image.setImageDrawable(originalImage)
             image.foreground = originalForeground
             image.setRenderEffect(null)
@@ -52,20 +54,26 @@ class LegacyBackgroundBlur(
         if (closed || !enabled || capturing || !image.isAttachedToWindow || image.width <= 0 ||
             image.height <= 0 || overlay.visibility != View.VISIBLE) return
         capturing = true
-        val ticket = generation
+        val ticket = ++generation
         if (hideOverlay) {
             restoreAlpha = overlay.alpha
             overlay.alpha = 0f
         }
         restoreImageAlpha = image.alpha
         image.alpha = 0f
-        // Wait for the hidden overlay to be submitted to the compositor before copying.
-        image.postOnAnimation {
-            image.postOnAnimation capture@{
-                if (closed || !enabled || generation != ticket || !image.isAttachedToWindow) {
-                    capturing = false
-                    restoreOverlay()
-                    return@capture
+        // Never leave controls hidden if frame callbacks or PixelCopy stop arriving.
+        handler.postDelayed(captureTimeout, 250)
+        var frames = 2
+        val frame = object : Runnable {
+            override fun run() {
+                if (ticket != generation || !capturing) return
+                if (closed || !enabled || !image.isAttachedToWindow) {
+                    cancelCapture()
+                    return
+                }
+                if (--frames > 0) {
+                    image.postOnAnimation(this)
+                    return
                 }
                 val location = IntArray(2)
                 image.getLocationOnScreen(location)
@@ -77,21 +85,30 @@ class LegacyBackgroundBlur(
                 try {
                     PixelCopy.request(window, Rect(location[0], location[1],
                         location[0] + image.width, location[1] + image.height), bitmap, { result ->
-                        capturing = false
-                        restoreOverlay()
-                        if (!closed && enabled && generation == ticket && result == PixelCopy.SUCCESS) {
-                            // Let the renderer release the previous bitmap; do not recycle an in-use image.
+                        val current = ticket == generation && capturing && !closed && enabled
+                        if (ticket == generation) cancelCapture()
+                        if (current && result == PixelCopy.SUCCESS) {
                             snapshot = bitmap
                             applySnapshot()
                         } else bitmap.recycle()
-                    }, Handler(Looper.getMainLooper()))
+                    }, handler)
                 } catch (_: IllegalArgumentException) {
                     bitmap.recycle()
-                    capturing = false
-                    restoreOverlay()
+                    cancelCapture()
                 }
             }
         }
+        captureFrame = frame
+        image.postOnAnimation(frame)
+    }
+
+    private fun cancelCapture() {
+        generation++
+        capturing = false
+        captureFrame?.let(image::removeCallbacks)
+        captureFrame = null
+        handler.removeCallbacks(captureTimeout)
+        restoreOverlay()
     }
 
     private fun applySnapshot() {
