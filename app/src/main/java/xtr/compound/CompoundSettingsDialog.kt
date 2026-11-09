@@ -50,6 +50,11 @@ object CompoundSettingsDialog {
         onSetup: () -> Unit
     ): Controller {
         dismiss()
+        var dialogBlur: LiveBackgroundBlur? = null
+        fun applyChanges() {
+            onChanged()
+            dialogBlur?.update(settings.opacityPercent, settings.blurRadiusDp)
+        }
         val density = activity.resources.displayMetrics.density
         val content = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
@@ -74,14 +79,14 @@ object CompoundSettingsDialog {
             isChecked = settings.showAllTasks
             setOnCheckedChangeListener { _, checked ->
                 settings.showAllTasks = checked
-                onChanged()
+                applyChanges()
             }
         }
         content.addView(scope)
         content.addView(text("When off, Compound shows only its own windows."))
-        content.addView(text("Taskbar and menu opacity"))
+        content.addView(text("Background opacity"))
         val opacityValue = text("${settings.opacityPercent}%", "Opacity ${settings.opacityPercent} percent")
-        val opacity = slider("Taskbar and menu opacity, percent").apply {
+        val opacity = slider("Background opacity, percent").apply {
             value = settings.opacityPercent.toFloat()
             addOnChangeListener { _, value, fromUser ->
                 val percent = value.toInt()
@@ -89,7 +94,7 @@ object CompoundSettingsDialog {
                 opacityValue.contentDescription = "Opacity $percent percent"
                 if (fromUser) {
                     settings.opacityPercent = percent
-                    onChanged()
+                    applyChanges()
                 }
             }
         }
@@ -106,7 +111,7 @@ object CompoundSettingsDialog {
                 blurValue.contentDescription = "Background blur $radius dp"
                 if (fromUser) {
                     settings.blurRadiusDp = radius
-                    onChanged()
+                    applyChanges()
                 }
             }
         }
@@ -139,6 +144,26 @@ object CompoundSettingsDialog {
             .setNeutralButton("Reset appearance", null)
             .create()
         dialog.setOnShowListener {
+            val dialogWindow = requireNotNull(dialog.window)
+            dialogWindow.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            val panel = dialogWindow.decorView.findViewById<android.widget.FrameLayout>(android.R.id.content)
+            panel.background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.TRANSPARENT)
+                cornerRadius = 28 * density
+            }
+            panel.clipToOutline = true
+            val background = android.widget.ImageView(activity).apply {
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                scaleType = android.widget.ImageView.ScaleType.FIT_XY
+            }
+            panel.addView(background, 0, android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            val legacy = LegacyBackgroundBlur(background, panel, activity.window, hideOverlay = false)
+            dialogBlur = LiveBackgroundBlur(background, 28f, legacy).also { helper ->
+                helper.onAvailabilityChanged = { refreshAvailability() }
+                helper.update(settings.opacityPercent, settings.blurRadiusDp)
+            }
+            background.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> legacy.refresh() }
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 settings.resetAppearance()
                 opacity.value = AppearanceSettings.DEFAULT_OPACITY.toFloat()
@@ -147,17 +172,19 @@ object CompoundSettingsDialog {
                 opacityValue.contentDescription = "Opacity ${AppearanceSettings.DEFAULT_OPACITY} percent"
                 blurValue.text = "${AppearanceSettings.DEFAULT_BLUR_RADIUS} dp"
                 blurValue.contentDescription = "Background blur ${AppearanceSettings.DEFAULT_BLUR_RADIUS} dp"
-                onChanged()
+                applyChanges()
             }
         }
         dialog.setOnDismissListener {
+            dialogBlur?.close()
+            dialogBlur = null
             if (activeDialog === dialog) {
                 activeDialog = null
                 activeController = null
             }
         }
         dialog.show()
-        return Controller(blurAvailable, blur, availability).also {
+        return Controller({ blurAvailable() && dialogBlur?.isAvailable == true }, blur, availability).also {
             activeDialog = dialog
             activeController = it
             it.refreshAvailability()
