@@ -67,12 +67,15 @@ class DesktopIntegrationTest {
                     activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     activity.findViewById<View>(R.id.settingsButton).performClick()
                 }
-                // AlertDialog's OnShow handler installs the reset action asynchronously.
+                // AlertDialog's OnShow handler installs the background and reset action asynchronously.
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->
                     val field = CompoundSettingsDialog::class.java.getDeclaredField("activeDialog").apply { isAccessible = true }
                     val dialog = field.get(CompoundSettingsDialog) as androidx.appcompat.app.AlertDialog
                     val root = dialog.window!!.decorView
+                    val panel = root.findViewById<FrameLayout>(android.R.id.content)
+                    val dialogBackground = panel.getChildAt(0) as android.widget.ImageView
+                    assertNotNull("Settings must own a blur/tint background", dialogBackground.background)
                     fun findSlider(view: View, description: String): Slider? {
                         if (view is Slider && view.contentDescription == description) return view
                         if (view is android.view.ViewGroup) {
@@ -80,7 +83,7 @@ class DesktopIntegrationTest {
                         }
                         return null
                     }
-                    val opacity = requireNotNull(findSlider(root, "Taskbar and menu opacity, percent"))
+                    val opacity = requireNotNull(findSlider(root, "Background opacity, percent"))
                     val blur = requireNotNull(findSlider(root, "Background blur radius, dp"))
                     fun setProgress(slider: Slider, value: Int) {
                         slider.isFocusableInTouchMode = true
@@ -96,10 +99,16 @@ class DesktopIntegrationTest {
                     }
                     setProgress(opacity, 100)
                     assertEquals(100, settings.opacityPercent)
+                    (dialogBackground.background as? android.graphics.drawable.GradientDrawable)?.let {
+                        assertEquals(255, it.color!!.defaultColor ushr 24)
+                    }
                     setProgress(opacity, 0)
                     assertEquals(0, settings.opacityPercent)
-                    android.util.Log.i("CompoundWindows", "Live blur available=${blur.isEnabled}")
-                    if (blur.isEnabled) {
+                    (dialogBackground.background as? android.graphics.drawable.GradientDrawable)?.let {
+                        assertEquals(0, it.color!!.defaultColor ushr 24)
+                    }
+                    assertTrue("Legacy fallback must keep radius adjustable", blur.isEnabled)
+                    run {
                         setProgress(blur, 100); assertEquals(100, settings.blurRadiusDp)
                         setProgress(blur, 0); assertEquals(0, settings.blurRadiusDp)
                     }
@@ -115,6 +124,75 @@ class DesktopIntegrationTest {
             settings.opacityPercent = oldOpacity
             settings.blurRadiusDp = oldBlur
             settings.showAllTasks = oldScope
+        }
+    }
+
+    /** Service-side failures must survive Parcel's exception encoding used by Binder. */
+    @Test fun taskServiceErrorsSurviveBinderParcel() {
+        val method = xtr.compound.server.RemoteService::class.java.getDeclaredMethod(
+            "remoteError", String::class.java, Throwable::class.java).apply { isAccessible = true }
+        val error = method.invoke(null, "Task query failed", UnsupportedOperationException("OEM API")) as Exception
+        val parcel = android.os.Parcel.obtain()
+        try {
+            parcel.writeException(error)
+            parcel.setDataPosition(0)
+            try {
+                parcel.readException()
+                fail("Task failure must not decode as success")
+            } catch (received: IllegalStateException) {
+                assertTrue(received.message!!.contains("Task query failed"))
+            }
+        } finally { parcel.recycle() }
+    }
+
+    /** Force the legacy path even on a live-blur device and check capture, tint and cleanup. */
+    @Test fun legacyBlurCapturesAndUpdatesOpacity() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            lateinit var image: android.widget.ImageView
+            lateinit var overlay: FrameLayout
+            lateinit var helper: LegacyBackgroundBlur
+            scenario.onActivity { activity ->
+                activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                overlay = FrameLayout(activity)
+                image = android.widget.ImageView(activity)
+                overlay.addView(image, FrameLayout.LayoutParams(120, 120))
+                activity.findViewById<FrameLayout>(R.id.appsContainer).layoutTransition = null
+                activity.findViewById<FrameLayout>(R.id.appsContainer).addView(overlay,
+                    FrameLayout.LayoutParams(120, 120))
+                helper = LegacyBackgroundBlur(image, overlay, activity.window)
+            }
+            try {
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { helper.update(true, android.graphics.Color.BLACK, 25f) }
+                var captured = false
+                val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+                while (!captured && System.nanoTime() < deadline) {
+                    scenario.onActivity { captured = image.drawable is android.graphics.drawable.BitmapDrawable }
+                    if (!captured) Thread.sleep(50)
+                }
+                assertTrue("Legacy PixelCopy must produce a snapshot", captured)
+                scenario.onActivity {
+                    assertEquals(1f, overlay.alpha, 0f)
+                    assertEquals(1f, image.alpha, 0f)
+                    assertEquals(255, (image.foreground as android.graphics.drawable.ColorDrawable).alpha)
+                    helper.update(true, android.graphics.Color.TRANSPARENT, 0f)
+                    assertEquals(0, (image.foreground as android.graphics.drawable.ColorDrawable).alpha)
+                    helper.refresh()
+                    helper.close() // An in-flight result must not reinstall the snapshot.
+                }
+                instrumentation.waitForIdleSync()
+                scenario.onActivity {
+                    assertNull(image.drawable)
+                    assertNull(image.foreground)
+                    assertEquals(1f, overlay.alpha, 0f)
+                    assertEquals(1f, image.alpha, 0f)
+                }
+            } finally {
+                scenario.onActivity {
+                    helper.close()
+                    (overlay.parent as? android.view.ViewGroup)?.removeView(overlay)
+                }
+            }
         }
     }
 
@@ -175,7 +253,9 @@ class DesktopIntegrationTest {
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             var controller: DesktopWindowController? = null
+            var originalActivity: MainActivity? = null
             scenario.onActivity { activity ->
+                originalActivity = activity
                 activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 // Use a separate controller to isolate this test's owned display from user windows.
                 val container = activity.findViewById<FrameLayout>(R.id.appsContainer)
@@ -215,6 +295,7 @@ class DesktopIntegrationTest {
                 scenario.onActivity { activity ->
                     val container = activity.findViewById<FrameLayout>(R.id.appsContainer)
                     val root = container.getChildAt(container.childCount - 1)
+                    assertTrue(controller!!.getWindows().single().maximized)
                     assertEquals(container.width, root.width)
                     assertEquals(container.height, root.height)
                     root.findViewById<android.view.View>(R.id.maximizeButton).performClick()
@@ -223,8 +304,20 @@ class DesktopIntegrationTest {
                 scenario.onActivity { activity ->
                     val container = activity.findViewById<FrameLayout>(R.id.appsContainer)
                     val root = container.getChildAt(container.childCount - 1)
+                    assertFalse(controller!!.getWindows().single().maximized)
                     assertEquals(normalWidth, root.width)
                     assertEquals(normalHeight, root.height)
+                }
+                scenario.onActivity { activity ->
+                    activity.delegate.localNightMode = if (
+                        activity.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
+                        android.content.res.Configuration.UI_MODE_NIGHT_YES
+                    ) androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+                }
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity ->
+                    assertSame("Night mode must retain the Activity and its hosted controllers", originalActivity, activity)
+                    assertEquals(displayId, controller!!.getWindows().single().displayId)
                 }
                 scenario.onActivity { controller!!.minimizeAll(); assertTrue(controller!!.getWindows().single().minimized) }
                 instrumentation.waitForIdleSync()
