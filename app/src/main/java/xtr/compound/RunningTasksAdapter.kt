@@ -16,7 +16,8 @@ data class TaskbarEntry(
     val displayId: Int,
     val taskId: Int?,
     val hosted: Boolean,
-    val minimized: Boolean = false
+    val minimized: Boolean = false,
+    val maximized: Boolean = false
 )
 
 class RunningTasksAdapter(
@@ -65,9 +66,15 @@ class RunningTasksAdapter(
             catch (_: Exception) { null }
         }?.constantState?.newDrawable()?.mutate()
         icon?.setBounds(0, 0, dp(24), dp(24))
-        holder.label.setCompoundDrawables(icon, null, null, null)
+        val stateIcon = when {
+            entry.minimized -> R.drawable.window_minimized
+            entry.maximized -> R.drawable.window_maximized
+            else -> null
+        }?.let { androidx.appcompat.content.res.AppCompatResources.getDrawable(context, it)?.mutate() }
+        stateIcon?.setBounds(0, 0, dp(18), dp(18))
+        holder.label.setCompoundDrawables(icon, null, stateIcon, null)
         holder.label.text = entry.title + if (entry.minimized) " (minimized)" else ""
-        holder.label.contentDescription = "Focus ${entry.title}"
+        holder.label.contentDescription = "${if (entry.minimized) "Restore" else "Focus"} ${entry.title}${if (entry.maximized) ", maximized" else ""}"
         holder.label.setOnClickListener { focus(entry) }
         holder.label.tooltipText = entry.title
         holder.close.contentDescription = "Close ${entry.title}"

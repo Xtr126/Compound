@@ -228,7 +228,7 @@ class MainActivity : AppCompatActivity() {
         val hosted = windows.getWindows()
         val entries = hosted.map { window ->
             TaskbarEntry("display:${window.displayId}", window.title.toString(), window.packageName,
-                window.displayId, tasks.firstOrNull { it.displayId == window.displayId }?.taskId, true, window.minimized)
+                window.displayId, tasks.firstOrNull { it.displayId == window.displayId }?.taskId, true, window.minimized, window.maximized)
         }.toMutableList()
         if (appearance.showAllTasks) tasks.filter { task ->
             task.packageName != packageName && hosted.none { it.displayId == task.displayId }

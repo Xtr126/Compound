@@ -25,7 +25,8 @@ data class WindowEntry(
     var displayId: Int,
     val title: CharSequence,
     val packageName: String,
-    var minimized: Boolean
+    var minimized: Boolean,
+    var maximized: Boolean = false
 )
 
 /** Owns app-window views and their remote virtual displays. Call UI methods on the main thread. */
@@ -260,6 +261,7 @@ class DesktopWindowController(
             root.translationY = 0f
             root.layoutParams = lp
         }
+        record.entry.maximized = record.state.maximized
         bindingMaximizeLabel(record)
         setWindowManipulationEnabled(record, !record.state.maximized)
         notifyWindowsChanged()
@@ -291,6 +293,9 @@ class DesktopWindowController(
     }
 
     private fun bindingMaximizeLabel(record: Record) {
+        record.binding.maximizeButton.setIconResource(
+            if (record.state.maximized) R.drawable.window_restore else R.drawable.window_maximized
+        )
         record.binding.maximizeButton.contentDescription = context.getString(
             if (record.state.maximized) R.string.restore_window else R.string.maximize_window
         )

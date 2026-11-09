@@ -53,7 +53,7 @@
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                app:icon="@drawable/baseline_zoom_out_map_24" />
+                app:icon="@drawable/window_maximized" />
 
 
             <com.google.android.material.button.MaterialButton
