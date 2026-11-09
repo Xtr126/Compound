@@ -6,6 +6,7 @@ import android.view.Surface;
 import android.content.Intent;
 import android.view.InputEvent;
 import android.graphics.Point;
+import xtr.compound.server.RunningTask;
 
 interface IRemoteService {
     /**
@@ -14,13 +15,21 @@ interface IRemoteService {
      * @param width Virtual display width
      * @param height Virtual display height
      * @param dpi Display density
-     * @return Display ID
+     * @return Display ID, or -1 when creation or launch fails
      */
     int renderAppToSurface(in Intent launchIntent, in Surface surface, int width, int height, int dpi);
 
     void resizeVirtualDisplay(int displayId, int width, int height, int dpi);
 
     void releaseVirtualDisplay(int displayId);
+
+    void setVirtualDisplaySurface(int displayId, in Surface surface);
+
+    List<RunningTask> getRunningTasks();
+
+    boolean focusTask(int taskId);
+
+    boolean removeTask(int taskId);
 
     void showPowerMenu();
 

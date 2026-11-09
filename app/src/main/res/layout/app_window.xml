@@ -39,6 +39,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/minimizeButton"
+                android:contentDescription="@string/minimize_window"
                 android:focusable="false"
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="wrap_content"
@@ -47,15 +48,17 @@
                 app:iconSize="28dp" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/maximizeButton"
+                android:contentDescription="@string/maximize_window"
                 android:focusable="false"
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                app:icon="@drawable/baseline_zoom_out_map_24" />
+                app:icon="@drawable/window_maximized" />
 
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/closeButton"
+                android:contentDescription="@string/close_window"
                 style="@style/Widget.Material3.Button.IconButton"
                 android:focusable="false"
                 android:layout_width="wrap_content"

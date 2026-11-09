@@ -4,53 +4,46 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class MovableFrameLayout implements View.OnTouchListener {
-    private final View frameLayout;
-    private float dX, dY;
+/** Drags a desktop window while keeping its title bar within the desktop bounds. */
+public final class MovableFrameLayout implements View.OnTouchListener {
+    private final View window;
+    private float downRawX, downRawY, startX, startY;
+    private boolean moved;
+    private static final int DRAG_SLOP_PX = 8;
 
-    public MovableFrameLayout(View frameLayout) {
-        this.frameLayout = frameLayout;
+    public MovableFrameLayout(View window) { this.window = window; }
+
+    @Override public boolean onTouch(View handle, MotionEvent event) {
+        ViewGroup parent = (ViewGroup) window.getParent();
+        if (parent == null) return false;
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                downRawX = event.getRawX();
+                downRawY = event.getRawY();
+                startX = window.getX();
+                startY = window.getY();
+                moved = false;
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                float dx = event.getRawX() - downRawX;
+                float dy = event.getRawY() - downRawY;
+                if (Math.abs(dx) + Math.abs(dy) > DRAG_SLOP_PX) moved = true;
+                if (moved) {
+                    window.setX(clamp(startX + dx, 0, Math.max(0, parent.getWidth() - window.getWidth())));
+                    window.setY(clamp(startY + dy, 0, Math.max(0, parent.getHeight() - window.getHeight())));
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                if (!moved) handle.performClick();
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                return true;
+            default:
+                return false;
+        }
     }
 
-    public boolean onTouch(View view, MotionEvent motionEvent){
-        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams)frameLayout.getLayoutParams();
-
-        int action = motionEvent.getAction();
-        switch (action) {
-            case MotionEvent.ACTION_DOWN: {
-                dX = frameLayout.getX() - motionEvent.getRawX();
-                dY = frameLayout.getY() - motionEvent.getRawY();
-                return true; // Consumed
-            }
-            case MotionEvent.ACTION_UP:
-                view.performClick();
-                return true;
-
-            case MotionEvent.ACTION_MOVE: {
-                int viewWidth = frameLayout.getWidth();
-                int viewHeight = frameLayout.getHeight();
-
-                View viewParent = (View)frameLayout.getParent();
-                int parentWidth = viewParent.getWidth();
-                int parentHeight = viewParent.getHeight();
-
-                float newX = motionEvent.getRawX() + dX;
-                newX = Math.max(layoutParams.leftMargin, newX); // Don't allow the FAB past the left hand side of the parent
-                newX = Math.min(parentWidth - viewWidth - layoutParams.rightMargin, newX); // Don't allow the FAB past the right hand side of the parent
-
-                float newY = motionEvent.getRawY() + dY;
-                newY = Math.max(layoutParams.topMargin, newY); // Don't allow the FAB past the top of the parent
-                newY = Math.min(parentHeight - viewHeight - layoutParams.bottomMargin, newY); // Don't allow the FAB past the bottom of the parent
-
-                frameLayout.animate()
-                        .x(newX)
-                        .y(newY)
-                        .setDuration(0)
-                        .start();
-                return true; // Consumed
-            }
-            default:
-                return frameLayout.onTouchEvent(motionEvent);
-        }
+    private static float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

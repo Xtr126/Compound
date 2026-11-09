@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <queries>
         <intent>
@@ -9,6 +10,7 @@
 
 
     <application
+        android:name=".CompoundApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -19,7 +21,7 @@
          >
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:configChanges="orientation|keyboardHidden|screenSize|uiMode"
             android:exported="true"
             android:theme="@style/Theme.Compound.Fullscreen" >
             <intent-filter>
@@ -28,6 +30,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- libsu instantiates RootService in its root process, not via Android Service. -->
+        <service
+            android:name=".server.RootRemoteService"
+            tools:ignore="Instantiatable"
+            android:exported="false"
+            android:process=":root" />
 
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
