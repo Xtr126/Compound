@@ -33,17 +33,21 @@ class DesktopIntegrationTest {
             assertEquals(80, settings.opacityPercent)
             assertEquals(25, settings.blurRadiusDp)
             assertFalse(settings.showAllTasks)
+            assertFalse(settings.taskbarIconsOnly)
             settings.opacityPercent = -10
             settings.blurRadiusDp = 120
             settings.showAllTasks = true
+            settings.taskbarIconsOnly = true
             val reopened = AppearanceSettings(context)
             assertEquals(0, reopened.opacityPercent)
             assertEquals(100, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
+            assertTrue(reopened.taskbarIconsOnly)
             settings.resetAppearance()
             assertEquals(80, reopened.opacityPercent)
             assertEquals(25, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
+            assertTrue("Reset appearance must preserve taskbar presentation", reopened.taskbarIconsOnly)
         } finally {
             val edit = prefs.edit().clear()
             old.forEach { (key, value) -> when (value) {
@@ -52,6 +56,29 @@ class DesktopIntegrationTest {
                 is String -> edit.putString(key, value)
             } }
             edit.commit()
+        }
+    }
+
+    @Test fun taskbarUsesApplicationLabelAndMarksActiveIconOnlyEntry() {
+        val appLabel = context.packageManager.getApplicationLabel(
+            context.packageManager.getApplicationInfo(context.packageName, 0)
+        ).toString()
+        val entry = TaskbarEntry("task:123", "A different activity title", context.packageName,
+            displayId = 0, taskId = 123, hosted = false)
+        val adapter = RunningTasksAdapter(context, {}, {})
+        adapter.submit(listOf(entry))
+        adapter.setIconsOnly(true)
+        adapter.setActiveEntry(entry.key)
+        instrumentation.runOnMainSync {
+            val parent = androidx.recyclerview.widget.RecyclerView(context)
+            val holder = adapter.onCreateViewHolder(parent, 0)
+            adapter.onBindViewHolder(holder, 0)
+            assertEquals(appLabel, holder.label.text.toString())
+            assertEquals(View.GONE, holder.label.visibility)
+            assertEquals(View.VISIBLE, holder.indicator.visibility)
+            assertTrue(holder.row.contentDescription.toString().contains("active task"))
+            assertTrue("Long press must remain discoverable for closing icon-only entries",
+                holder.row.contentDescription.toString().contains("Long press to close"))
         }
     }
 

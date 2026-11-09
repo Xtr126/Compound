@@ -39,6 +39,7 @@ class DesktopWindowController(
     }
     private val records = mutableListOf<Record>()
     private var windowsChanged: Runnable? = null
+    private var focusedDisplayChanged: ((Int) -> Unit)? = null
     @Volatile private var shutDown = false
 
     init {
@@ -59,6 +60,9 @@ class DesktopWindowController(
     }
 
     fun setOnWindowsChanged(listener: Runnable?) { windowsChanged = listener }
+
+    /** Reports every explicit hosted-window focus, including touches on the current top window. */
+    fun setOnFocusedDisplayChanged(listener: ((Int) -> Unit)?) { focusedDisplayChanged = listener }
 
     fun getWindows(): List<WindowEntry> = records.filterNot { it.closed }.map { it.entry.copy() }
 
@@ -212,6 +216,7 @@ class DesktopWindowController(
         records.add(record)
         record.binding.root.bringToFront()
         record.binding.surfaceView.requestFocus()
+        focusedDisplayChanged?.invoke(record.entry.displayId)
         notifyWindowsChanged()
     }
 
