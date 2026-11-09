@@ -73,6 +73,7 @@ public final class RemoteServiceHelper {
     private static final Shizuku.OnBinderReceivedListener BINDER_RECEIVED = () -> MAIN.post(() -> resolveShizuku());
     private static final Shizuku.OnBinderDeadListener BINDER_DEAD = () -> MAIN.post(() -> {
         if (isRootService || systemApp) return;
+        MAIN.removeCallbacks(TIMEOUT);
         connectionGeneration++;
         if (activeBinder != null && activeDeathRecipient != null) {
             try { activeBinder.unlinkToDeath(activeDeathRecipient, 0); } catch (RuntimeException ignored) { }
@@ -249,6 +250,7 @@ public final class RemoteServiceHelper {
         isRootService = true;
         int generation = ++connectionGeneration;
         setState(State.CONNECTING, "Connecting to the root service.");
+        MAIN.removeCallbacks(TIMEOUT);
         MAIN.postDelayed(TIMEOUT, CONNECTION_TIMEOUT_MS);
         RemoteServiceConnection connection = new RemoteServiceConnection(null, generation);
         activeConnection = connection;
@@ -257,6 +259,7 @@ public final class RemoteServiceHelper {
         try {
             RootService.bind(new Intent(appContext, RootRemoteService.class), connection);
         } catch (RuntimeException e) {
+            MAIN.removeCallbacks(TIMEOUT);
             releaseActiveConnection();
             binding = false;
             if (Shizuku.pingBinder()) resolveShizuku();
@@ -274,6 +277,7 @@ public final class RemoteServiceHelper {
         isRootService = false;
         int generation = ++connectionGeneration;
         setState(State.CONNECTING, "Connecting to Shizuku.");
+        MAIN.removeCallbacks(TIMEOUT);
         MAIN.postDelayed(TIMEOUT, CONNECTION_TIMEOUT_MS);
         Shizuku.UserServiceArgs args = new Shizuku.UserServiceArgs(
                 new ComponentName(appContext, RemoteService.class.getName()))
@@ -286,6 +290,7 @@ public final class RemoteServiceHelper {
         try {
             Shizuku.bindUserService(args, connection);
         } catch (RuntimeException e) {
+            MAIN.removeCallbacks(TIMEOUT);
             releaseActiveConnection();
             binding = false;
             setState(State.ERROR, "Could not bind Shizuku service: " + messageOf(e));
