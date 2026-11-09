@@ -1,49 +1,42 @@
 package xtr.compound
 
-import android.graphics.Point
 import android.view.MotionEvent
 import android.view.MotionEvent.PointerCoords
 import android.view.MotionEvent.PointerProperties
 
+/** Maps view-local pointer coordinates to the current virtual display dimensions. */
 class InputTransformer(
-    private val mService: IRemoteService,
-    private val viewWidth: Int,
-    private val viewHeight: Int,
-    private val displayId: Int
+    viewWidth: Int,
+    viewHeight: Int
 ) {
-    private val displaySize: Point
-        get() {
-            val baseSize = Point()
-            mService.getBaseDisplaySize(displayId, baseSize)
-            return baseSize
-        }
+    @Volatile private var viewWidth = viewWidth.coerceAtLeast(1)
+    @Volatile private var viewHeight = viewHeight.coerceAtLeast(1)
+    @Volatile private var displayWidth = viewWidth.coerceAtLeast(1)
+    @Volatile private var displayHeight = viewHeight.coerceAtLeast(1)
+
+    fun updateViewSize(width: Int, height: Int) {
+        viewWidth = width.coerceAtLeast(1)
+        viewHeight = height.coerceAtLeast(1)
+        displayWidth = width.coerceAtLeast(1)
+        displayHeight = height.coerceAtLeast(1)
+    }
 
     fun transformTouchEvent(event: MotionEvent): MotionEvent {
-        val pointerProperties = arrayOfNulls<PointerProperties>(event.pointerCount)
-        val pointerCoords = arrayOfNulls<PointerCoords>(event.pointerCount)
-        for (i in 0..< event.pointerCount) {
-            pointerProperties[i] = PointerProperties()
-            pointerCoords[i] = PointerCoords()
-            event.getPointerProperties(i, pointerProperties[i])
-            event.getPointerCoords(i, pointerCoords[i])
-            pointerCoords[i]!!.x = pointerCoords[i]!!.x / viewWidth * displaySize.x
-            pointerCoords[i]!!.y = pointerCoords[i]!!.y / viewHeight * displaySize.y
+        val width = viewWidth
+        val height = viewHeight
+        val targetWidth = displayWidth
+        val targetHeight = displayHeight
+        val properties = Array(event.pointerCount) { i -> PointerProperties().also { event.getPointerProperties(i, it) } }
+        val coords = Array(event.pointerCount) { i -> PointerCoords().also { event.getPointerCoords(i, it) } }
+        for (i in coords.indices) {
+            coords[i].x = coords[i].x * targetWidth / width
+            coords[i].y = coords[i].y * targetHeight / height
         }
         return MotionEvent.obtain(
-            event.downTime,
-            event.eventTime,
-            event.action,
-            event.pointerCount,
-            pointerProperties,
-            pointerCoords,
-            event.metaState,
-            event.buttonState,
-            event.xPrecision,
-            event.yPrecision,
-            event.deviceId,
-            event.edgeFlags,
-            event.source,
-            event.flags
+            event.downTime, event.eventTime, event.action, event.pointerCount,
+            properties, coords, event.metaState, event.buttonState,
+            event.xPrecision, event.yPrecision, event.deviceId,
+            event.edgeFlags, event.source, event.flags
         )
     }
 }

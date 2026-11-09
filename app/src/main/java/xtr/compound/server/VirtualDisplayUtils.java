@@ -1,9 +1,13 @@
 package xtr.compound.server;
 
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.AttributionSource;
+import android.content.pm.PackageManager;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
+import android.os.Process;
 import android.view.InputEvent;
 import android.view.Surface;
 
@@ -46,8 +50,32 @@ public class VirtualDisplayUtils {
     public VirtualDisplay createNewVirtualDisplay(String name, int width, int height, int dpi, Surface surface, int flags) throws Exception {
         Constructor<DisplayManager> ctor = android.hardware.display.DisplayManager.class.getDeclaredConstructor(Context.class);
         ctor.setAccessible(true);
-        android.hardware.display.DisplayManager dm = ctor.newInstance(context);
+        android.hardware.display.DisplayManager dm = ctor.newInstance(getDisplayContext());
         return dm.createVirtualDisplay(name, width, height, dpi, surface, flags);
+    }
+
+    /** Shizuku UserServices run as shell (UID 2000) but their supplied Context names Compound. */
+    private Context getDisplayContext() {
+        if (Process.myUid() != Process.SHELL_UID || "com.android.shell".equals(context.getPackageName())) {
+            return context;
+        }
+        try {
+            return context.createPackageContext("com.android.shell", Context.CONTEXT_IGNORE_SECURITY);
+        } catch (PackageManager.NameNotFoundException | SecurityException ignored) {
+            // Some OEM package managers hide the shell package context. DisplayManager uses the
+            // package and operation package names for attribution, so retain the same base
+            // Context/UID while presenting the package owned by this process.
+            return new ContextWrapper(context) {
+                @Override public String getPackageName() { return "com.android.shell"; }
+                @Override public String getOpPackageName() { return "com.android.shell"; }
+                @Override public AttributionSource getAttributionSource() {
+                    return new AttributionSource.Builder(Process.SHELL_UID)
+                            .setPackageName("com.android.shell")
+                            .setAttributionTag(getAttributionTag())
+                            .build();
+                }
+            };
+        }
     }
 
     private int getFlags() {

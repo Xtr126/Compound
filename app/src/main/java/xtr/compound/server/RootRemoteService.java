@@ -7,7 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.topjohnwu.superuser.ipc.RootService;
 
-class RootRemoteService extends RootService {
+public class RootRemoteService extends RootService {
     private RemoteService mService = null;
 
     @Override
@@ -16,6 +16,12 @@ class RootRemoteService extends RootService {
             mService = new RemoteService(this);
         }
         return mService;
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mService != null) mService.shutdown();
+        super.onDestroy();
     }
 
 }
