@@ -4,6 +4,24 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DesktopWindowStateTest {
+    @Test fun bottomRightCornerResizeChangesBothDimensionsWithinDesktop() {
+        val bounds = WindowResizeGeometry.resize(
+            TouchToResizeListener.BOTTOM_RIGHT,
+            startX = 100f, startY = 80f, startWidth = 300, startHeight = 200,
+            dx = 700, dy = 500, parentWidth = 800, parentHeight = 600, minSize = 160
+        )
+        assertEquals(WindowResizeGeometry.Bounds(100, 80, 700, 520), bounds)
+    }
+
+    @Test fun bottomLeftCornerResizeKeepsRightEdgeAndRespectsMinimum() {
+        val bounds = WindowResizeGeometry.resize(
+            TouchToResizeListener.BOTTOM_LEFT,
+            startX = 100f, startY = 80f, startWidth = 300, startHeight = 200,
+            dx = 250, dy = 40, parentWidth = 800, parentHeight = 600, minSize = 160
+        )
+        assertEquals(WindowResizeGeometry.Bounds(240, 80, 160, 240), bounds)
+    }
+
     @Test fun minimizeKeepsWindowStateAndRestoreShowsIt() {
         val state = DesktopWindowState(400, 600, 20, 30)
         state.minimize()

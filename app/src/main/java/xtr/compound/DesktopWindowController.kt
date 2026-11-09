@@ -121,6 +121,8 @@ class DesktopWindowController(
         binding.borderLeft.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.HORIZONTAL_LEFT))
         binding.borderRight.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.HORIZONTAL_RIGHT))
         binding.borderBottom.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.VERTICAL))
+        binding.resizeBottomLeft.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.BOTTOM_LEFT))
+        binding.resizeBottomRight.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.BOTTOM_RIGHT))
         binding.root.setOnClickListener { focus(record) }
         notifyWindowsChanged()
     }
@@ -290,6 +292,8 @@ class DesktopWindowController(
         record.binding.borderLeft.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.HORIZONTAL_LEFT) else null)
         record.binding.borderRight.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.HORIZONTAL_RIGHT) else null)
         record.binding.borderBottom.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.VERTICAL) else null)
+        record.binding.resizeBottomLeft.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.BOTTOM_LEFT) else null)
+        record.binding.resizeBottomRight.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.BOTTOM_RIGHT) else null)
     }
 
     private fun bindingMaximizeLabel(record: Record) {

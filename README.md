@@ -10,7 +10,7 @@ For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), op
 
 ## Desktop controls
 
-- Launch apps from the start menu. Drag their title bars and resize from the edges.
+- Launch apps from the start menu. Drag their title bars, resize from the left or right edge and bottom edge, or drag either bottom corner to resize width and height together.
 - Minimize preserves the app session; select its taskbar entry to restore it.
 - Maximize toggles between workspace size and the saved normal bounds.
 - Close removes the hosted task(s) and releases its virtual display. Closing an external task removes that task, without force-stopping its package.
