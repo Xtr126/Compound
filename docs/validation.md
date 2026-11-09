@@ -24,3 +24,11 @@ Results from the implementation run are recorded below before delivery. A build 
 - The slider UI test reached both opacity endpoints through keyboard input and persisted the values. Its reset assertion raced the asynchronous dialog OnShow handler. The harness now waits for the main looper after opening; that final harness change was not rerun after the request to finish with current device coverage. Preference-level reset already passed.
 - The device reports live blur unavailable. Live compositor appearance and enabled radius slider interaction remain unverified. Android 12, root/system-app mode, permission denial/restart, external-task UI, and resized touch-coordinate checks remain manual follow-up work.
 - Debugging found and fixed libsu startup ordering and shell display-attribution mismatch. Locked-screen attempts were distinguished from actual framework failures. See [development.md](development.md) for reproduction commands and diagnosis.
+
+### PR #1 follow-up — 2026-11-09
+
+- Required debug build, all nine unit tests, lint and instrumentation APK compilation passed with the Java 21 Gradle daemon.
+- Samsung SM-A155F, Android 16 / API 36, authorized Shizuku shell: final instrumentation run **OK (6 tests)**. Covers preferences, settings opacity/radius endpoints and reset, settings background tint updates, forced legacy snapshot capture/opacity/cleanup, Binder exception Parcel encoding, offscreen privileged display/task operations, visible maximize/restore/minimize lifecycle, and an in-app night-mode switch retaining the Activity and display ID.
+- The initial screen-off attempt failed visible-surface checks. After waking the device, a synthetic-view alpha assertion exposed the test container's enter animation; the test disables that animation. The final run passed all six tests.
+- Live blur is unavailable on this device. Enabled compositor blur, Android 12, root/system-app mode, denial/restart, and resized input remain unverified. Snapshot blur is static between refreshes and may briefly hide taskbar/menu overlays during capture; protected content may not be captured.
+- CI's failed job log confirmed setup-android's default `tools` package caused SDK setup to exit before Gradle. The workflow now requests `platform-tools` explicitly; a fresh hosted CI run is still required.

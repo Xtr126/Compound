@@ -7,3 +7,5 @@ Compound opens each selected launcher activity in its own remote virtual display
 - **Close** releases the virtual display and removes the window. Repeated close requests are safe.
 
 Virtual display creation, resize, input injection, surface attachment, and release run on a dedicated worker. If the privileged service disconnects, active windows are removed because their virtual displays and task sessions are no longer reliable; launch those apps again after reconnecting. The privileged service provides `setVirtualDisplaySurface(displayId, surface)`, where a null surface detaches rendering while retaining the display/task.
+
+Dark-mode (`uiMode`) changes are handled by the existing Activity so its controller and hosted displays survive. Other Activity destruction still closes sessions. Verify a day/night switch preserves task/display IDs and minimize/restore behavior. The maximize control switches to overlapping-window restore artwork; taskbar entries retain app artwork and add minimized/maximized state icons.

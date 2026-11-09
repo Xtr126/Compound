@@ -18,7 +18,7 @@ For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), op
 
 Open **Compound settings** using the start-menu gear. Taskbar scope defaults to **Compound windows**; opt into **All Android tasks** to also focus and close accessible tasks on their existing displays. Home/recents and Compound itself are excluded. Android/OEM task permissions can restrict these operations.
 
-Appearance sliders apply immediately to the taskbar and start-menu background:
+Appearance sliders apply immediately to the taskbar, start-menu and Compound settings dialog backgrounds:
 
 | Setting | Range | Default |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ Appearance sliders apply immediately to the taskbar and start-menu background:
 
 Opacity changes the background tint only. Zero radius turns blur off. Settings persist across restarts, and **Reset appearance** restores the opacity and blur defaults; taskbar scope stays as selected. Device settings remain available separately.
 
-Live blur uses Android's compositor through a hidden framework helper. Device support, system blur settings, hidden-API restrictions, and SurfaceView composition affect availability. When unavailable, Compound keeps a tinted background and explains why the blur slider is disabled; the saved radius is retained. See [appearance notes](docs/appearance.md), [service notes](docs/service.md), and [window notes](docs/windows.md).
+Live blur uses Android's compositor through a hidden framework helper. Device support, system blur settings, hidden-API restrictions, and SurfaceView composition affect availability. When unavailable, Compound uses legacy snapshot blur with working opacity and radius controls. Snapshots refresh when the menu opens or its background changes size; capture failure keeps a translucent tint. See [appearance notes](docs/appearance.md), [service notes](docs/service.md), and [window notes](docs/windows.md).
 
 ## Build and validation
 
@@ -42,3 +42,5 @@ The APK is written to `app/build/outputs/apk/debug/`. GitHub Actions runs these 
 Privileged and compositor behavior needs device testing in addition to unit tests. See [the validation checklist](docs/validation.md) for coverage and reproduction steps.
 
 For device setup, focused instrumentation runs, log capture, and common failure diagnosis, see the [development guide](docs/development.md).
+
+Window controls show a restore icon while maximized. Taskbar entries show distinct minimized and maximized state icons. Dark-mode changes preserve hosted sessions.

@@ -49,7 +49,9 @@ adb shell am instrument -w -e class 'xtr.compound.DesktopIntegrationTest#privile
 | Test | Purpose / preconditions |
 | --- | --- |
 | `appearancePersistsClampsAndResetPreservesTaskScope` | Real preference defaults, clamping, reopening and reset; restores previous values. No Shizuku needed. |
-| `appearanceDialogSlidersApplyImmediately` | Opens the real settings dialog, drives sliders with keyboard events, checks saved endpoints/reset and unchanged foreground alpha. Radius controls are exercised only when available. Waits for dialog OnShow before driving reset. |
+| `appearanceDialogSlidersApplyImmediately` | Opens the real settings dialog, drives sliders with keyboard events, checks saved endpoints/reset and unchanged foreground alpha. Radius controls remain enabled for legacy blur and are always exercised. Waits for dialog OnShow before driving reset. |
+| `legacyBlurCapturesAndUpdatesOpacity` | Forces snapshot capture, opacity endpoints and stale-callback cleanup. Requires a visible unlocked window. |
+| `taskServiceErrorsSurviveBinderParcel` | Verifies service failures encode/decode as IllegalStateException through Binder Parcel format. |
 | `privilegedDisplayAttributionAndCleanupWithoutUi` | Requires authorized Shizuku. Uses a SurfaceTexture to launch Settings, resize, detach/attach, enumerate, focus/remove its task and release twice; useful without visible SurfaceView composition. |
 | `privilegedTaskAndMinimizeRestoreLifecycle` | Requires authorized Shizuku and an unlocked visible desktop. Checks real SurfaceView launch, task/display association, focus, maximize/restore bounds, minimize/restore retaining display ID, and task/display cleanup. |
 
@@ -81,7 +83,7 @@ Inspect only the relevant keyguard, display or Compound records before sharing l
 adb exec-out screencap -p > compound-screen.png
 ```
 
-A screenshot cannot establish live blur: compare moving/animated content over time on a blur-capable device. Record compositor support and the system blur-enabled state. Test both enabled and disabled states on a development device, restoring any changed system setting afterward. On unsupported devices, verify tint/opacity and the disabled radius explanation instead.
+A screenshot cannot establish live blur: compare moving/animated content over time on a blur-capable device. Record compositor support and the system blur-enabled state. Test both enabled and disabled states on a development device, restoring any changed system setting afterward. On unsupported devices, verify tint/opacity and the legacy snapshot blur explanation and working radius control instead.
 
 ## Failure diagnosis
 
@@ -95,7 +97,7 @@ A screenshot cannot establish live blur: compare moving/animated content over ti
 | Task list is empty or focus/remove fails | Inspect compatibility method signatures and activity-type filtering. Unsupported Binder APIs must report errors, not silently return an empty list. Validate task IDs and exclude system/home/recents tasks. Never replace close with package force-stop. |
 | Reflection says illegal access | Hidden Binder proxies can be private classes even when their methods are public. Resolve the known signature and make the method accessible in the privileged process. UI blur additionally uses narrowly scoped HiddenApiBypass exemptions. |
 | Old service code or duplicate bindings | Install through Package Manager, bump VERSION_CODE for protocol changes, and inspect generation guards, unbind cleanup and binder-death handling. Shizuku shutdown uses reserved transaction 16777115, not an ordinary public Java method alone. |
-| Live blur unavailable | Check hardware/system support before reflection. Inspect getViewRootImpl/createBackgroundBlurDrawable and Android/OEM signatures. Keep the tint fallback and saved radius. Do not restore screenshot blur. |
+| Live blur unavailable | Check hardware/system support before reflection. Inspect getViewRootImpl/createBackgroundBlurDrawable and Android/OEM signatures. Keep the tint fallback and saved radius. Verify the on-demand legacy snapshot fallback. |
 | Dialog tests race reset/show handlers | Wait for the main looper to become idle after showing the dialog, before driving buttons or reading layout. Keep tests separate from system focus/keyguard failures. |
 
 ## Extend coverage
@@ -103,3 +105,5 @@ A screenshot cannot establish live blur: compare moving/animated content over ti
 Pure unit tests exercise geometry/state and known hidden task-interface shapes. Add a regression test to the production-used model/helper when fixing those paths. Device tests cover actual Binder identity and surfaces, but cannot replace the manual matrix in [validation.md](validation.md): root versus Shizuku shell, permission denial and restart, Android 12 versus recent Android, external tasks, input after resizing, and real compositor blur.
 
 Record failures and gaps honestly. The current device lacks live blur support; successful fallback checks are not evidence that live blur composes correctly with SurfaceView on every OEM.
+
+CI explicitly requests only `platform-tools` from setup-android; its default `tools` package has been removed from the SDK repository. Platform and build-tools installation remains explicit.
