@@ -10,7 +10,7 @@ Compound hosts Android applications on virtual displays inside a desktop Activit
 - RemoteService executes privileged task/display/input calls. Keep these off the UI thread. The UI must not invoke privileged framework services directly.
 - Use actual task IDs for focus/remove; never force-stop a package to close one task. All-device task visibility is opt-in, with Compound windows the default. Exclude home/recents and Compound itself.
 - Keep framework reflection in compatibility helpers. Check known signatures, handle unsupported APIs explicitly, and do not parse dumpsys output or copy Binder transaction numbers for task APIs. Hidden API stubs must remain compileOnly.
-- Background blur is compositor/device dependent. Maintain an opacity fallback, restore original backgrounds and remove listeners on detach. The `HiddenApiBypass` dependency is used only for narrowly scoped `View`, `ViewRootImpl` and `BackgroundBlurDrawable` access. Do not reintroduce screenshot blur.
+- Background blur is compositor/device dependent. Maintain an opacity fallback, restore original backgrounds and remove listeners on detach. The `HiddenApiBypass` dependency is used only for narrowly scoped `View`, `ViewRootImpl` and `BackgroundBlurDrawable` access. Use live blur when available and the on-demand legacy snapshot fallback otherwise.
 
 ## Validation
 

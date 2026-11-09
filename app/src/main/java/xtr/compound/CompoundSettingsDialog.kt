@@ -25,7 +25,7 @@ object CompoundSettingsDialog {
     ) {
         fun refreshAvailability() {
             val available = blurAvailable()
-            blurSlider.isEnabled = available
+            blurSlider.isEnabled = true
             availabilityText.visibility = if (available) View.GONE else View.VISIBLE
         }
     }
@@ -112,7 +112,7 @@ object CompoundSettingsDialog {
         }
         content.addView(blur)
         content.addView(blurValue)
-        val availability = text("Live blur is unavailable on this device or is disabled by the system.")
+        val availability = text("Live blur is unavailable. Using legacy snapshot blur; backgrounds refresh when opened.")
         availability.contentDescription = availability.text
         content.addView(availability)
 

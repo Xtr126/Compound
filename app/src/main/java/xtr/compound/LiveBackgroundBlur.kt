@@ -3,7 +3,6 @@ package xtr.compound
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.LayerDrawable
 import android.os.Build
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
@@ -14,12 +13,13 @@ import java.util.concurrent.Executor
 import java.util.function.Consumer
 
 /**
- * Best-effort bridge to Android's live cross-window blur drawable. It never captures the screen.
+ * Best-effort bridge to Android's live cross-window blur, with an optional legacy fallback.
  * Reflection is deliberately isolated here because the drawable and ViewRootImpl API are hidden.
  */
 class LiveBackgroundBlur(
     private val view: View,
-    private val cornerRadiusDp: Float = 0f
+    private val cornerRadiusDp: Float = 0f,
+    private val legacy: LegacyBackgroundBlur? = null
 ) : AutoCloseable {
     private val windowManager = view.context.getSystemService(WindowManager::class.java)
     private val density = view.resources.displayMetrics.density
@@ -55,7 +55,8 @@ class LiveBackgroundBlur(
             restoreBackground()
             blurDrawable = null
             fallbackDrawable = null
-            updateAvailability()
+            publishAvailability(false)
+            legacy?.update(false, 0, 0f)
         }
     }
 
@@ -88,6 +89,7 @@ class LiveBackgroundBlur(
             runCatching { blurRadiusMethod?.invoke(drawable, (effectiveRadius * density).toInt()) }
             runCatching { cornerRadiusMethod?.invoke(drawable, cornerRadiusDp * density) }
         }
+        legacy?.update(!isAvailable && !closed && view.isAttachedToWindow, tint, pendingBlurRadiusDp * density)
         view.invalidate()
     }
 
@@ -99,7 +101,20 @@ class LiveBackgroundBlur(
         val windowEnabled = if (Build.VERSION.SDK_INT >= 31) {
             runCatching { windowManager?.isCrossWindowBlurEnabled == true }.getOrDefault(false)
         } else false
-        publishAvailability(drawableReady && windowEnabled && view.isAttachedToWindow)
+        val available = drawableReady && windowEnabled && view.isAttachedToWindow && !closed
+        if (available) {
+            if (view.background !== ownedBackground || ownedBackground !== blurDrawable) {
+                installBackground(blurDrawable!!)
+            }
+        } else {
+            if (ownedBackground === blurDrawable) {
+                blurDrawable?.let { runCatching { blurRadiusMethod?.invoke(it, 0) } }
+                ownedBackground = null
+            }
+            installFallback()
+        }
+        publishAvailability(available)
+        update(pendingOpacityPercent, pendingBlurRadiusDp)
     }
 
     private fun publishAvailability(value: Boolean) {
@@ -129,8 +144,8 @@ class LiveBackgroundBlur(
             cornerRadiusMethod = type.getMethod("setCornerRadius", Float::class.javaPrimitiveType)
             colorMethod = type.getMethod("setColor", Int::class.javaPrimitiveType)
             blurDrawable = drawable
+            ownedBackground = null
             fallbackDrawable = null
-            installBackground(drawable)
             update(pendingOpacityPercent, pendingBlurRadiusDp)
         } catch (_: ReflectiveOperationException) {
             // Hidden API enforcement or OEM implementation differences: keep the neutral tint fallback.
@@ -155,8 +170,8 @@ class LiveBackgroundBlur(
     }
 
     private fun installBackground(layer: Drawable) {
-        // Existing background stays beneath the translucent tint; child icons remain on top.
-        ownedBackground = LayerDrawable(listOfNotNull(originalBackground, layer).toTypedArray())
+        // Replace the background while owned: an opaque original would defeat opacity controls.
+        ownedBackground = layer
         view.background = ownedBackground
     }
 
@@ -190,6 +205,7 @@ class LiveBackgroundBlur(
         closed = true
         view.removeOnAttachStateChangeListener(attachListener)
         unregisterBlurListener()
+        legacy?.close()
         restoreBackground()
         blurDrawable = null
         ownedBackground = null

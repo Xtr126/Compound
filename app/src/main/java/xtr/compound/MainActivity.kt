@@ -24,6 +24,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var windows: DesktopWindowController
     private lateinit var appearance: AppearanceSettings
     private lateinit var taskbarBlur: LiveBackgroundBlur
+    private lateinit var legacyMenuBlur: LegacyBackgroundBlur
+    private lateinit var legacyTaskbarBlur: LegacyBackgroundBlur
     private lateinit var menuBlur: LiveBackgroundBlur
     private lateinit var taskbar: RunningTasksAdapter
     private val handler = Handler(Looper.getMainLooper())
@@ -67,8 +69,16 @@ class MainActivity : AppCompatActivity() {
         binding.taskbar.root.visibility = View.VISIBLE
         binding.taskbar.root.setBackgroundColor(Color.TRANSPARENT)
         binding.startMenu.root.setCardBackgroundColor(Color.TRANSPARENT)
-        taskbarBlur = LiveBackgroundBlur(binding.taskbarBackground)
-        menuBlur = LiveBackgroundBlur(binding.startMenu.background, 40f)
+        legacyTaskbarBlur = LegacyBackgroundBlur(binding.taskbarBackground, binding.taskbar.root, window)
+        legacyMenuBlur = LegacyBackgroundBlur(binding.startMenu.background, binding.startMenu.root, window)
+        taskbarBlur = LiveBackgroundBlur(binding.taskbarBackground, legacy = legacyTaskbarBlur)
+        menuBlur = LiveBackgroundBlur(binding.startMenu.background, 40f, legacyMenuBlur)
+        binding.taskbarBackground.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            legacyTaskbarBlur.refresh()
+        }
+        binding.startMenu.background.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            legacyMenuBlur.refresh()
+        }
         taskbarBlur.onAvailabilityChanged = { refreshAppearanceAvailability() }
         menuBlur.onAvailabilityChanged = { refreshAppearanceAvailability() }
         applyAppearance()
@@ -101,6 +111,7 @@ class MainActivity : AppCompatActivity() {
         binding.taskbar.startMenuButton.contentDescription = "Open start menu"
         binding.taskbar.startMenuButton.setOnClickListener {
             binding.startMenu.root.visibility = if (binding.startMenu.root.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+            legacyMenuBlur.refresh()
         }
         binding.taskbar.startMenuButton.setOnLongClickListener { showSetup(); true }
         binding.startMenu.settingsButton.contentDescription = "Compound settings"
