@@ -155,10 +155,10 @@ public class RemoteService extends IRemoteService.Stub {
                 for (RunningTask task : queryRunningTasks()) {
                     if (task.displayId == displayId && owner.packageName.equals(task.packageName)) {
                         try { removeTaskInternal(task.taskId); }
-                        catch (RemoteException e) { Log.w(TAG, "Could not remove owned task " + task.taskId, e); }
+                        catch (RemoteException | RuntimeException e) { Log.w(TAG, "Could not remove owned task " + task.taskId, e); }
                     }
                 }
-            } catch (RemoteException e) {
+            } catch (RemoteException | RuntimeException e) {
                 Log.w(TAG, "Could not remove owned task before releasing display " + displayId, e);
             }
         }
@@ -221,7 +221,7 @@ public class RemoteService extends IRemoteService.Stub {
         Object manager = requireActivityTaskManager();
         try {
             Object raw = invokeGetTasks(manager);
-            if (!(raw instanceof Collection)) throw new RemoteException("ActivityTaskManager.getTasks returned an unsupported result");
+            if (!(raw instanceof Collection)) throw new IllegalStateException("ActivityTaskManager.getTasks returned an unsupported result");
             for (Object info : (Collection<?>) raw) {
                 int taskId = intField(info, "taskId", -1);
                 int displayId = intField(info, "displayId", Display.DEFAULT_DISPLAY);
@@ -264,18 +264,15 @@ public class RemoteService extends IRemoteService.Stub {
         }
     }
 
-    private Object requireActivityTaskManager() throws RemoteException {
+    private Object requireActivityTaskManager() {
         Object manager = getActivityTaskManager();
-        if (manager == null) throw new RemoteException("ActivityTaskManager binder is unavailable in this privileged process");
+        if (manager == null) throw new IllegalStateException("ActivityTaskManager binder is unavailable in this privileged process");
         return manager;
     }
 
-    private static RemoteException remoteError(String message, Throwable cause) {
-        RemoteException error = new RemoteException(message + (cause == null ? "" : ": " + cause.getMessage()));
-        if (cause != null) {
-            try { error.initCause(cause); } catch (IllegalStateException ignored) { }
-        }
-        return error;
+    /** Use a Parcel-supported exception so task failures reach the UI across Binder. */
+    private static IllegalStateException remoteError(String message, Throwable cause) {
+        return new IllegalStateException(message + (cause == null ? "" : ": " + cause.getMessage()), cause);
     }
 
     private static int intField(Object object, String name, int fallback) {
