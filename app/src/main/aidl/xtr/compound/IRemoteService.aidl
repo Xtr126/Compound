@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 // IRemoteService.aidl
 package xtr.compound;
 
@@ -38,4 +39,7 @@ interface IRemoteService {
     int getBaseDisplayDensity(int displayId);
 
     void getBaseDisplaySize(int displayId, out Point baseSize);
+
+    /** Expands the Android notification shade from the privileged service process. */
+    void expandNotificationsPanel();
 }

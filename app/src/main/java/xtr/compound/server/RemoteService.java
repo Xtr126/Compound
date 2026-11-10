@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 package xtr.compound.server;
 
 import android.content.ComponentName;
@@ -163,6 +164,11 @@ public class RemoteService extends IRemoteService.Stub {
             }
         }
         VirtualDisplayUtils.releaseVirtualDisplay(display);
+    }
+
+    @Override public void expandNotificationsPanel() throws RemoteException {
+        try { StatusBarCompat.expandNotificationsPanel(); }
+        catch (Exception e) { throw new RemoteException("Could not open Android notifications: " + e.getMessage()); }
     }
 
     @Override public List<RunningTask> getRunningTasks() throws RemoteException {

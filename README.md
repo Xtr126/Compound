@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 # Compound
 Compound is a sleek modern desktop for Android with custom app window decorations and window management.
 ![image](https://github.com/user-attachments/assets/25c09157-7c6d-4b46-8c8e-b2957bed84cf)
@@ -18,6 +19,7 @@ For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), op
 - Maximize toggles between workspace size and the saved normal bounds.
 - Close removes the hosted task(s) and releases its virtual display. Closing an external task removes that task, without force-stopping its package.
 - The Home button minimizes all Compound windows. Back targets the focused hosted app; Recents refreshes the running-task list.
+- The notification button opens Android's notification shade, including Quick Settings where the device provides it. This uses the privileged service connection, so system-app/root/Shizuku access must be available; unsupported or denied status-bar calls show an error.
 
 Open **Compound settings** using the start-menu gear. Taskbar scope defaults to **Compound windows**; opt into **All Android tasks** to also focus and close accessible tasks on their existing displays. Home/recents and Compound itself are excluded. Android/OEM task permissions can restrict these operations.
 

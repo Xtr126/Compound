@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 # Development, debugging, and instrumentation
 
 ## Build environment
@@ -101,6 +102,8 @@ A screenshot cannot establish live blur: compare moving/animated content over ti
 | Dialog tests race reset/show handlers | Wait for the main looper to become idle after showing the dialog, before driving buttons or reading layout. Keep tests separate from system focus/keyguard failures. |
 
 ## Extend coverage
+
+The taskbar notification control calls `IStatusBarService.expandNotificationsPanel()` from `RemoteService` through the active privileged backend. Manually check it with root and Shizuku on supported devices, including shell identity and permission-denied behavior; the system shade may vary by OEM and Android version. No device-side verification is claimed by a successful build.
 
 Pure unit tests exercise geometry/state and known hidden task-interface shapes. Add a regression test to the production-used model/helper when fixing those paths. Device tests cover actual Binder identity and surfaces, but cannot replace the manual matrix in [validation.md](validation.md): root versus Shizuku shell, permission denial and restart, Android 12 versus recent Android, external tasks, input after resizing, and real compositor blur.
 

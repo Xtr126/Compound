@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 package xtr.compound
 
 import android.content.Intent
@@ -151,6 +152,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.taskbar.recentsButton.setOnClickListener { refreshTasks(); binding.taskbar.taskbarApps.smoothScrollToPosition(0) }
+        binding.taskbar.notificationsButton.setOnClickListener { withService { it.expandNotificationsPanel() } }
     }
 
     private fun applyAppearance() {
