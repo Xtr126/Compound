@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         binding.appsContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             val density = resources.displayMetrics.density
             val compact = binding.root.width / density < 720
-            (binding.taskbar.imageButton4.parent as View).visibility = if (compact) View.GONE else View.VISIBLE
+            (binding.taskbar.wifiSettingsButton.parent as View).visibility = if (compact) View.GONE else View.VISIBLE
             listOf(binding.taskbar.startMenuButton, binding.taskbar.backButton,
                 binding.taskbar.homeButton, binding.taskbar.recentsButton).forEachIndexed { index, button ->
                 val desired = ((if (index == 0) 60 else 48) * density).toInt()
@@ -151,6 +151,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.taskbar.recentsButton.setOnClickListener { refreshTasks(); binding.taskbar.taskbarApps.smoothScrollToPosition(0) }
+        binding.taskbar.wifiSettingsButton.setOnClickListener {
+            launchSafely(Intent(Settings.Panel.ACTION_WIFI), Intent(Settings.ACTION_WIFI_SETTINGS))
+        }
+        binding.taskbar.batterySettingsButton.setOnClickListener {
+            launchSafely(Intent(Intent.ACTION_POWER_USAGE_SUMMARY), Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS), Intent(Settings.ACTION_SETTINGS))
+        }
+        binding.taskbar.notificationsButton.setOnClickListener { withService { it.expandNotificationsPanel() } }
     }
 
     private fun applyAppearance() {
@@ -293,8 +300,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun launchSafely(intent: Intent) {
-        try { startActivity(intent) } catch (_: Exception) { message(getString(R.string.no_app_can_open_this_action)) }
+    private fun launchSafely(intent: Intent, vararg fallbacks: Intent) {
+        for (candidate in listOf(intent, *fallbacks)) {
+            if (runCatching { startActivity(candidate); true }.getOrDefault(false)) return
+        }
+        message(getString(R.string.no_app_can_open_this_action))
     }
     private fun message(text: String) { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
 

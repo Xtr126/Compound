@@ -74,21 +74,23 @@
         android:layout_height="match_parent"
         android:layout_marginVertical="8dp">
         <ImageButton
-            android:id="@+id/imageButton4"
+            android:id="@+id/wifiSettingsButton"
             android:layout_width="55dp"
             android:layout_height="match_parent"
             android:layout_marginRight="-18dp"
             android:padding="16dp"
             android:background="@android:color/transparent"
             android:scaleType="centerCrop"
+            android:contentDescription="@string/open_wifi_settings"
             app:srcCompat="@drawable/baseline_wifi_24" />
         <ImageButton
-            android:id="@+id/imageButton5"
+            android:id="@+id/batterySettingsButton"
             android:background="@android:color/transparent"
             android:layout_width="50dp"
             android:scaleType="centerCrop"
             android:layout_height="match_parent"
             android:padding="12dp"
+            android:contentDescription="@string/open_battery_settings"
             app:srcCompat="@drawable/baseline_battery_charging_full_24" />
 
         <TextClock
@@ -101,12 +103,13 @@
             android:gravity="center" />
 
         <ImageButton
-            android:id="@+id/imageButton6"
+            android:id="@+id/notificationsButton"
             android:background="@android:color/transparent"
             android:scaleType="centerCrop"
             android:layout_width="64dp"
             android:layout_height="match_parent"
             android:padding="18dp"
+            android:contentDescription="@string/open_notifications"
             app:srcCompat="@drawable/baseline_chat_bubble_outline_24" />
 
 
