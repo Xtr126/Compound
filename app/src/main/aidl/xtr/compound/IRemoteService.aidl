@@ -38,4 +38,7 @@ interface IRemoteService {
     int getBaseDisplayDensity(int displayId);
 
     void getBaseDisplaySize(int displayId, out Point baseSize);
+
+    /** Expands the Android notification shade from the privileged service process. */
+    void expandNotificationsPanel();
 }

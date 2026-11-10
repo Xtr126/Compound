@@ -104,8 +104,14 @@ A screenshot cannot establish live blur: compare moving/animated content over ti
 
 ## Extend coverage
 
+The taskbar notification control calls `IStatusBarService.expandNotificationsPanel()` from `RemoteService` through the active privileged backend. Manually check it with root and Shizuku on supported devices, including shell identity and permission-denied behavior; the system shade may vary by OEM and Android version. No device-side verification is claimed by a successful build.
+
 Pure unit tests exercise geometry/state and known hidden task-interface shapes. Add a regression test to the production-used model/helper when fixing those paths. Device tests cover actual Binder identity and surfaces, but cannot replace the manual matrix in [validation.md](validation.md): root versus Shizuku shell, permission denial and restart, Android 12 versus recent Android, external tasks, input after resizing, and real compositor blur.
 
 Record failures and gaps honestly. The current device lacks live blur support; successful fallback checks are not evidence that live blur composes correctly with SurfaceView on every OEM.
 
 CI explicitly requests only `platform-tools` from setup-android; its default `tools` package has been removed from the SDK repository. Platform and build-tools installation remains explicit.
+
+### Taskbar system shortcuts contributions
+
+The Wi-Fi/battery workstream added settings panels, fallbacks, and accessible button names. The notifications workstream added the privileged shade action and compatibility helper. Their combined change uses version code 5 to refresh the Shizuku service after adding the AIDL operation. Assemble, unit tests, and lint cover the combined source; root/Shizuku panel behavior still requires manual device checks.

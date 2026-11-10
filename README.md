@@ -19,6 +19,8 @@ For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), op
 - Close removes the hosted task(s) and releases its virtual display. Closing an external task removes that task, without force-stopping its package.
 - The Home button minimizes all Compound windows. Back targets the focused hosted app; Recents refreshes the running-task list.
 - The start-menu power button asks WindowManager to open Android's system global-actions menu. It requires the privileged service; availability depends on the system image exposing and permitting that operation.
+- The taskbar Wi-Fi button opens Android's Wi-Fi panel, falling back to Wi-Fi settings when the panel is unavailable. The battery button opens the system battery/power overview, falling back to battery saver settings and then general Settings if needed.
+- The notification button opens Android's notification shade, including Quick Settings where the device provides it. This uses the privileged service connection, so system-app/root/Shizuku access must be available; unsupported or denied status-bar calls show an error.
 
 Open **Compound settings** using the start-menu gear. Taskbar scope defaults to **Compound windows**; opt into **All Android tasks** to also focus and close accessible tasks on their existing displays. Home/recents and Compound itself are excluded. Android/OEM task permissions can restrict these operations.
 

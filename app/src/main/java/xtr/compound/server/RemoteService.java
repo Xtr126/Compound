@@ -165,6 +165,11 @@ public class RemoteService extends IRemoteService.Stub {
         VirtualDisplayUtils.releaseVirtualDisplay(display);
     }
 
+    @Override public void expandNotificationsPanel() throws RemoteException {
+        try { StatusBarCompat.expandNotificationsPanel(); }
+        catch (Exception e) { throw new RemoteException("Could not open Android notifications: " + e.getMessage()); }
+    }
+
     @Override public List<RunningTask> getRunningTasks() throws RemoteException {
         return queryRunningTasks();
     }

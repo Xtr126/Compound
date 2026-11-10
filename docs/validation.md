@@ -12,6 +12,7 @@ Repeat on Android 12 and a recent Android version, with root and with Shizuku ru
 4. Move animated content behind the taskbar/start menu and verify blur is live. Adjust radius to zero and maximum; adjust opacity through both endpoints, keeping icons/text readable. In the settings dialog, verify the backdrop remains visible at zero opacity. Check minimized/maximized state icons against both light and dark tints. Restart Compound and verify persistence; reset appearance. Disable system window blur and confirm fallback/explanation, then re-enable it and verify saved radius is restored.
 5. Pause/resume and destroy/recreate the Activity. Confirm task polling stops while paused and resources/listeners are cleaned on destruction. Window sessions are closed when the desktop Activity is destroyed; no process-death session recovery is promised.
 6. Switch taskbar display between app names and icons only with zero, one, and several tasks. Confirm names come from application labels, icons are centered in the taskbar app area, the active indicator moves when another task is selected, and long-press closes a task in icon-only mode.
+7. Tap the taskbar Wi-Fi button and confirm the system Wi-Fi panel opens; on devices without a panel, confirm Wi-Fi settings opens. Tap the battery button and confirm the battery/power overview opens, falling back to battery saver settings and then general Settings if unavailable.
 
 ## Recorded results
 
