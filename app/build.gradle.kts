@@ -1,4 +1,3 @@
-/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 plugins {
     alias(libs.plugins.android.application)
 }

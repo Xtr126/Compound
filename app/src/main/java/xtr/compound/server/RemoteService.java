@@ -1,4 +1,3 @@
-/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 package xtr.compound.server;
 
 import android.content.ComponentName;
@@ -342,6 +341,8 @@ public class RemoteService extends IRemoteService.Stub {
         try { GlobalActionsCompat.show(); }
         catch (ReflectiveOperationException | RuntimeException e) {
             Log.e(TAG, "Could not show system power menu", e);
+            throw new IllegalStateException(
+                    "Could not open the system power menu. Check privileged access and device support.", e);
         }
     }
 

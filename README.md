@@ -1,4 +1,3 @@
-/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 # Compound
 Compound is a sleek modern desktop for Android with custom app window decorations and window management.
 ![image](https://github.com/user-attachments/assets/25c09157-7c6d-4b46-8c8e-b2957bed84cf)
