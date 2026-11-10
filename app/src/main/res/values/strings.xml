@@ -30,6 +30,7 @@
     <string name="task_is_no_longer_available">Task is no longer available</string>
     <string name="operation_failed">Operation failed</string>
     <string name="no_app_can_open_this_action">No app can open this action</string>
+    <string name="clock_calendar_shortcut">Clock and calendar. Tap the time for Clock or the date for Calendar.</string>
     <string name="open_wifi_settings">Open Wi-Fi settings</string>
     <string name="open_battery_settings">Open battery and power settings</string>
     <string name="later">Later</string>

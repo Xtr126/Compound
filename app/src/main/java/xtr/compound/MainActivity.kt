@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.provider.AlarmClock
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
@@ -157,7 +158,30 @@ class MainActivity : AppCompatActivity() {
         binding.taskbar.batterySettingsButton.setOnClickListener {
             launchSafely(Intent(Intent.ACTION_POWER_USAGE_SUMMARY), Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS), Intent(Settings.ACTION_SETTINGS))
         }
+        binding.taskbar.textClock.setOnClickListener { openClock() }
+        binding.taskbar.textClock.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_UP -> {
+                    if (event.y < view.height / 2f) openClock() else openCalendar()
+                    true
+                }
+                android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE,
+                android.view.MotionEvent.ACTION_CANCEL -> true
+                else -> false
+            }
+        }
         binding.taskbar.notificationsButton.setOnClickListener { withService { it.expandNotificationsPanel() } }
+    }
+
+    private fun openClock() {
+        launchSafely(
+            Intent(AlarmClock.ACTION_SHOW_ALARMS),
+            Intent(AlarmClock.ACTION_SET_ALARM)
+        )
+    }
+
+    private fun openCalendar() {
+        launchSafely(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALENDAR))
     }
 
     private fun applyAppearance() {

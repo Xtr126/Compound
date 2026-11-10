@@ -99,7 +99,8 @@
             android:layout_marginHorizontal="-10dp"
             android:format12Hour="HH:mm\ndd-MMM-yy"
             android:format24Hour="HH:mm\ndd-MMM-yy"
-            android:gravity="center" />
+            android:gravity="center"
+            android:contentDescription="@string/clock_calendar_shortcut" />
 
         <ImageButton
             android:id="@+id/notificationsButton"
