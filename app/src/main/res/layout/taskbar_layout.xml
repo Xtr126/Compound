@@ -16,6 +16,7 @@
         android:scaleType="centerCrop"
         android:id="@+id/startMenuButton"
         android:background="@android:color/transparent"
+        android:contentDescription="@string/open_start_menu"
         app:srcCompat="@drawable/blissos_logo_black" />
 
     <ImageButton
@@ -25,6 +26,7 @@
         android:padding="24dp"
         android:background="@android:color/transparent"
         android:scaleType="centerCrop"
+        android:contentDescription="@string/back_in_focused_app"
         app:srcCompat="@drawable/ic_sysbar_back" />
     <ImageButton
         android:id="@+id/homeButton"
@@ -33,6 +35,7 @@
         android:scaleType="centerCrop"
         android:layout_height="match_parent"
         android:padding="20dp"
+        android:contentDescription="@string/minimize_all_windows"
         app:srcCompat="@drawable/ic_sysbar_home" />
     <ImageButton
         android:id="@+id/recentsButton"
@@ -41,6 +44,7 @@
         android:layout_width="70dp"
         android:layout_height="match_parent"
         android:padding="24dp"
+        android:contentDescription="@string/refresh_running_tasks"
         app:srcCompat="@drawable/ic_sysbar_recent" />
 
     <com.google.android.material.divider.MaterialDivider
