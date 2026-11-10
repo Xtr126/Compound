@@ -1,5 +1,7 @@
 # Appearance settings
 
+The live blur drawable and the PixelCopy fallback use a pale light-mode taskbar/menu tint and a dark night-mode tint. The opacity setting scales the tint in either mode.
+
 Compound stores its appearance preferences in the app's private `appearance_settings` SharedPreferences file. The explicit defaults are **80% opacity**, **25 dp background blur**, and **Compound-only task scope** (`showAllTasks = false`). Opacity is clamped to 0–100 percent and the blur radius to 0–100 dp. `resetAppearance()` restores the two appearance values; task scope is a separate preference and remains as selected.
 
 `LiveBackgroundBlur` is a best-effort API 31+ adapter for Android's live cross-window blur. It obtains `ViewRootImpl` and its background blur drawable through reflection and uses the public `WindowManager` cross-window-blur enabled listener. When live blur is unavailable, `LegacyBackgroundBlur` uses on-demand PixelCopy snapshots with RenderEffect on the background ImageView only. Call `update(opacityPercent, blurRadiusDp)` to apply values, observe `isAvailable` and `onAvailabilityChanged`, and always call `close()` when the view owner is disposed. The helper replaces the background while active, so an opaque original cannot defeat opacity adjustments, and restores the view's original background if the background it installed is still present.
