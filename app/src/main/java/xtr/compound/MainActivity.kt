@@ -114,14 +114,14 @@ class MainActivity : AppCompatActivity() {
             legacyMenuBlur.refresh()
         }
         binding.taskbar.startMenuButton.setOnLongClickListener { showSetup(); true }
-        binding.startMenu.settingsButton.contentDescription = "Compound settings"
-        binding.startMenu.settingsButton.setOnClickListener {
+        binding.startMenu.editButton.contentDescription = "Compound settings"
+        binding.startMenu.editButton.setOnClickListener {
             CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
                 applyAppearance(); renderTaskbar(); refreshTasks()
             }, ::showSetup)
         }
-        binding.startMenu.editButton.contentDescription = "Device settings"
-        binding.startMenu.editButton.setOnClickListener { launchSafely(Intent(Settings.ACTION_SETTINGS)) }
+        binding.startMenu.settingsButton.contentDescription = "Device settings"
+        binding.startMenu.settingsButton.setOnClickListener { launchSafely(Intent(Settings.ACTION_SETTINGS)) }
         binding.startMenu.folderButton.contentDescription = "Open files"
         binding.startMenu.folderButton.setOnClickListener {
             launchSafely(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
