@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.content.res.Configuration
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
 import android.view.WindowManager
@@ -243,5 +244,10 @@ class LiveBackgroundBlur(
 
         private fun argb(alpha: Int, red: Int, green: Int, blue: Int) =
             (alpha shl 24) or (red shl 16) or (green shl 8) or blue
+        internal fun themeTint(opacityPercent: Int, nightMode: Boolean): Int {
+            val alpha = opacityPercent.coerceIn(0, 100) * 255 / 100
+            val base = if (nightMode) 0xFF181A20.toInt() else 0xFFF4F5F8.toInt()
+            return (alpha shl 24) or (base and 0x00FFFFFF)
+        }
     }
 }

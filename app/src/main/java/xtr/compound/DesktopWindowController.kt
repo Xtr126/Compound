@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.view.MotionEvent
 import android.view.Gravity
+import android.view.PointerIcon
 import android.view.Surface
 import android.util.Log
 import android.widget.Toast
@@ -121,6 +122,7 @@ class DesktopWindowController(
         binding.borderLeft.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.HORIZONTAL_LEFT))
         binding.borderRight.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.HORIZONTAL_RIGHT))
         binding.borderBottom.setOnTouchListener(TouchToResizeListener(binding.root, TouchToResizeListener.VERTICAL))
+        configureResizeHandles(binding, enabled = true)
         binding.root.setOnClickListener { focus(record) }
         notifyWindowsChanged()
     }
@@ -290,6 +292,39 @@ class DesktopWindowController(
         record.binding.borderLeft.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.HORIZONTAL_LEFT) else null)
         record.binding.borderRight.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.HORIZONTAL_RIGHT) else null)
         record.binding.borderBottom.setOnTouchListener(if (enabled) TouchToResizeListener(record.binding.root, TouchToResizeListener.VERTICAL) else null)
+        configureResizeHandles(record.binding, enabled)
+    }
+
+    private fun configureResizeHandles(binding: AppWindowBinding, enabled: Boolean) {
+        listOf(
+            binding.borderLeft,
+            binding.borderRight,
+            binding.borderBottom,
+            binding.resizeBottomLeft,
+            binding.resizeBottomRight,
+            binding.resizeTopLeft,
+            binding.resizeTopRight
+        ).forEach { handle ->
+            handle.isClickable = enabled
+            handle.isFocusable = enabled
+            handle.importantForAccessibility = if (enabled) {
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            } else {
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+        }
+        binding.borderLeft.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW) else null
+        binding.borderRight.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW) else null
+        binding.borderBottom.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_VERTICAL_DOUBLE_ARROW) else null
+        binding.resizeBottomLeft.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW) else null
+        binding.resizeBottomRight.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW) else null
+        binding.resizeTopLeft.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW) else null
+        binding.resizeTopRight.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW) else null
+
+        binding.resizeBottomLeft.setOnTouchListener(if (enabled) TouchToResizeListener(binding.root, TouchToResizeListener.BOTTOM_LEFT) else null)
+        binding.resizeBottomRight.setOnTouchListener(if (enabled) TouchToResizeListener(binding.root, TouchToResizeListener.BOTTOM_RIGHT) else null)
+        binding.resizeTopLeft.setOnTouchListener(if (enabled) TouchToResizeListener(binding.root, TouchToResizeListener.TOP_LEFT) else null)
+        binding.resizeTopRight.setOnTouchListener(if (enabled) TouchToResizeListener(binding.root, TouchToResizeListener.TOP_RIGHT) else null)
     }
 
     private fun bindingMaximizeLabel(record: Record) {
