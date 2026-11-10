@@ -82,6 +82,24 @@ class DesktopIntegrationTest {
         }
     }
 
+    @Test fun taskbarDoesNotCacheFallbackTitlesForMissingPackages() {
+        val adapter = RunningTasksAdapter(context, {}, {})
+        val entries = listOf(
+            TaskbarEntry("first", "First activity", "missing.example.package", 0, 1, false),
+            TaskbarEntry("second", "Second activity", "missing.example.package", 0, 2, false)
+        )
+        adapter.submit(entries)
+        instrumentation.runOnMainSync {
+            val parent = androidx.recyclerview.widget.RecyclerView(context)
+            val first = adapter.onCreateViewHolder(parent, 0)
+            adapter.onBindViewHolder(first, 0)
+            val second = adapter.onCreateViewHolder(parent, 0)
+            adapter.onBindViewHolder(second, 1)
+            assertEquals("First activity", first.label.text.toString())
+            assertEquals("Second activity", second.label.text.toString())
+        }
+    }
+
     @Test fun appearanceDialogSlidersApplyImmediately() {
         val settings = AppearanceSettings(context)
         val oldOpacity = settings.opacityPercent

@@ -182,11 +182,14 @@ class RunningTasksAdapter(
         holder.close.setOnClickListener { close(entry) }
     }
 
-    private fun appLabel(entry: TaskbarEntry): String = labels.getOrPut(entry.packageName) {
-        runCatching {
+    private fun appLabel(entry: TaskbarEntry): String {
+        labels[entry.packageName]?.let { return it }
+        val resolved = runCatching {
             val app = context.packageManager.getApplicationInfo(entry.packageName, 0)
             context.packageManager.getApplicationLabel(app).toString().takeIf { it.isNotBlank() }
-        }.getOrNull() ?: entry.title.takeIf { it.isNotBlank() } ?: entry.packageName
+        }.getOrNull()
+        if (resolved != null) labels[entry.packageName] = resolved
+        return resolved ?: entry.title.takeIf { it.isNotBlank() } ?: entry.packageName
     }
 
     private fun updateIconCentering(recyclerView: RecyclerView) {
