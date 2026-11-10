@@ -1,6 +1,7 @@
 package xtr.compound
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -293,6 +294,15 @@ class MainActivity : AppCompatActivity() {
         RemoteServiceHelper.initialize(applicationContext)
     }
     override fun onPause() { resumed = false; handler.removeCallbacks(poll); super.onPause() }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (!destroyed && ::taskbarBlur.isInitialized) {
+            applyAppearance()
+            legacyTaskbarBlur.refresh()
+            legacyMenuBlur.refresh()
+            CompoundSettingsDialog.refreshAppearance()
+        }
+    }
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean("onboardingShown", onboardingShown)
         super.onSaveInstanceState(outState)

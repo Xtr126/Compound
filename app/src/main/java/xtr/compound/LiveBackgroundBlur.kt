@@ -89,7 +89,7 @@ class LiveBackgroundBlur(
         pendingBlurRadiusDp = blurRadiusDp.coerceIn(0, 100)
         val nightMode = view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
             Configuration.UI_MODE_NIGHT_YES
-        val tint = fallbackTint(pendingOpacityPercent)
+        val tint = fallbackTint(pendingOpacityPercent, nightMode)
         val liveTint = liveTint(pendingOpacityPercent, nightMode)
         fallbackDrawable?.setColor(tint)
         blurDrawable?.let { drawable ->
@@ -226,9 +226,10 @@ class LiveBackgroundBlur(
     companion object {
         private const val MAX_LIVE_TINT_ALPHA = 0x66
 
-        internal fun fallbackTint(opacityPercent: Int): Int {
+        internal fun fallbackTint(opacityPercent: Int, nightMode: Boolean): Int {
             val alpha = opacityPercent.coerceIn(0, 100) * 255 / 100
-            return argb(alpha, 0x18, 0x1A, 0x20)
+            return if (nightMode) argb(alpha, 0x18, 0x1A, 0x20)
+            else argb(alpha, 0xF4, 0xF5, 0xF8)
         }
 
         internal fun liveTint(opacityPercent: Int, nightMode: Boolean): Int {

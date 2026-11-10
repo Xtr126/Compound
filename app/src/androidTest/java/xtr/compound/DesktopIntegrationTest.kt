@@ -138,6 +138,7 @@ class DesktopIntegrationTest {
             // Allow the initial capture to finish or time out before testing steady visibility.
             Thread.sleep(600)
             var taskbarSnapshot: android.graphics.drawable.Drawable? = null
+            var menuSnapshot: android.graphics.drawable.Drawable? = null
             scenario.onActivity { activity ->
                 assertEquals(1f, activity.findViewById<View>(R.id.taskbar).alpha, 0f)
                 (activity.findViewById<View>(R.id.appsContainer).parent as View)
@@ -145,34 +146,46 @@ class DesktopIntegrationTest {
                 val taskbarHelperField = MainActivity::class.java.getDeclaredField("legacyTaskbarBlur")
                     .apply { isAccessible = true }
                 (taskbarHelperField.get(activity) as LegacyBackgroundBlur).refresh()
+            }
+            Thread.sleep(600)
+            scenario.onActivity { activity ->
                 val background = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
-                repeat(4) { background.requestLayout() }
+                taskbarSnapshot = background.drawable
+                assertTrue("Taskbar should snapshot the Activity window behind its in-window surface",
+                    taskbarSnapshot is android.graphics.drawable.BitmapDrawable)
+                assertEquals(expectedSnapshotColor,
+                    (taskbarSnapshot as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
+                        background.width / 2, background.height / 2))
                 activity.findViewById<View>(R.id.startMenuButton).performClick()
+            }
+            Thread.sleep(600)
+            scenario.onActivity { activity ->
+                val menu = activity.findViewById<View>(R.id.startMenu)
+                val menuBackground = activity.findViewById<android.widget.ImageView>(R.id.background)
+                menuSnapshot = menuBackground.drawable
+                assertTrue("Start menu should snapshot the Activity window behind its in-window surface",
+                    menuSnapshot is android.graphics.drawable.BitmapDrawable)
+                assertEquals(expectedSnapshotColor,
+                    (menuSnapshot as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
+                        menuBackground.width / 2, menuBackground.height / 2))
+                val taskbarBackground = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
+                repeat(4) { taskbarBackground.requestLayout() }
+                repeat(4) { menu.requestLayout(); menuBackground.requestLayout() }
             }
             Thread.sleep(600)
             scenario.onActivity { activity ->
                 val taskbar = activity.findViewById<View>(R.id.taskbar)
                 val menu = activity.findViewById<View>(R.id.startMenu)
                 val taskbarBackground = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
-                taskbarSnapshot = taskbarBackground.drawable
+                val menuBackground = activity.findViewById<android.widget.ImageView>(R.id.background)
                 assertEquals(View.VISIBLE, taskbar.visibility)
                 assertEquals(1f, taskbar.alpha, 0f)
                 assertEquals(View.VISIBLE, menu.visibility)
                 assertEquals(1f, menu.alpha, 0f)
-                assertTrue("Taskbar should snapshot the Activity window behind its in-window surface",
-                    taskbarSnapshot is android.graphics.drawable.BitmapDrawable)
-                assertEquals(expectedSnapshotColor,
-                    (taskbarSnapshot as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
-                        taskbarBackground.width / 2, taskbarBackground.height / 2))
-                val menuBackground = activity.findViewById<android.widget.ImageView>(R.id.background)
-                assertTrue("Start menu should snapshot the Activity window behind its in-window surface",
-                    menuBackground.drawable is android.graphics.drawable.BitmapDrawable)
-                assertEquals(expectedSnapshotColor,
-                    (menuBackground.drawable as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
-                        menuBackground.width / 2, menuBackground.height / 2))
                 assertSame("Unchanged bounds must not recapture the taskbar", taskbarSnapshot,
                     taskbarBackground.drawable)
-                menu.requestLayout()
+                assertSame("Unchanged bounds must not recapture the start menu", menuSnapshot,
+                    menuBackground.drawable)
             }
             Thread.sleep(600)
             scenario.onActivity { activity ->
