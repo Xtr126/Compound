@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -10,7 +11,7 @@ android {
         applicationId = "xtr.compound"
         minSdk = 31
         targetSdk = 35
-        versionCode = 3
+        versionCode = 4
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 # Development, debugging, and instrumentation
 
 ## Build environment
@@ -54,6 +55,8 @@ adb shell am instrument -w -e class 'xtr.compound.DesktopIntegrationTest#privile
 | `taskServiceErrorsSurviveBinderParcel` | Verifies service failures encode/decode as IllegalStateException through Binder Parcel format. |
 | `privilegedDisplayAttributionAndCleanupWithoutUi` | Requires authorized Shizuku. Uses a SurfaceTexture to launch Settings, resize, detach/attach, enumerate, focus/remove its task and release twice; useful without visible SurfaceView composition. |
 | `privilegedTaskAndMinimizeRestoreLifecycle` | Requires authorized Shizuku and an unlocked visible desktop. Checks real SurfaceView launch, task/display association, focus, maximize/restore bounds, minimize/restore retaining display ID, and task/display cleanup. |
+
+The start-menu power action calls WindowManager's hidden `IWindowManager.showGlobalActions()` operation from the privileged service. The compatibility helper checks for the method at runtime; unsupported/OEM variants and security denials are logged. The Shizuku shell backend relies on the platform's shell identity permissions for `INTERNAL_SYSTEM_WINDOW`; verify it on each supported device. Build success does not establish runtime permission or OEM compatibility.
 
 Privileged tests use JUnit assumptions when Shizuku is absent or unauthorized. A skipped test is not a compatibility pass. They launch and remove a Settings task; run them on a development device. Preference tests restore saved settings, but do not promise recovery of pre-existing desktop window sessions: Activity destruction intentionally closes sessions.
 
