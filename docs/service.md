@@ -2,6 +2,8 @@
 
 Compound connects to its privileged service in this order: preinstalled system app, root, then Shizuku. The app reports connection and permission states through `RemoteServiceHelper`; when root is unavailable, Shizuku must be running and Compound must be granted permission. The `Retry` action should rerun root detection before checking Shizuku.
 
+Permission prompts require the user's explicit **Grant access** action. Compound checks `Shizuku.isPreV11()`, `checkSelfPermission()`, and `shouldShowRequestPermissionRationale()` before calling `requestPermission()`. Shizuku versions before v11 are reported as unsupported. When permission is already granted, the service binds immediately; when the rationale indicates a previous denial, setup directs the user to grant access in Shizuku instead of issuing another request. Grant, denial, binder/request errors, and unavailable Shizuku all leave setup in a reported state and drain pending connection callbacks.
+
 The root and Shizuku service use the same AIDL interface. Shizuku's user service receives the framework-created `Context` constructor on API 13 and later; the no-argument constructor remains for older Shizuku versions. The service's `destroy()` cleans up its virtual displays and exits the Shizuku user-service process. The root service uses the same cleanup path when Android destroys it.
 
 ## Tasks
