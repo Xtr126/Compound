@@ -12,11 +12,12 @@ import android.view.WindowInsets
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import java.util.concurrent.Executors
 import xtr.compound.databinding.ActivityFullscreenBinding
 import xtr.compound.server.RemoteServiceHelper
 import xtr.compound.server.RunningTask
+import java.util.concurrent.Executors
 
 /** Desktop UI; Binder work runs on workers and is reconciled on the main thread. */
 class MainActivity : AppCompatActivity() {
@@ -108,31 +109,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupActions() {
         binding.taskbar.startMenuButton.imageTintList = binding.startMenu.powerButton.iconTint
-        binding.taskbar.startMenuButton.contentDescription = "Open start menu"
         binding.taskbar.startMenuButton.setOnClickListener {
             binding.startMenu.root.visibility = if (binding.startMenu.root.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
             legacyMenuBlur.refresh()
         }
         binding.taskbar.startMenuButton.setOnLongClickListener { showSetup(); true }
-        binding.startMenu.editButton.contentDescription = "Compound settings"
         binding.startMenu.editButton.setOnClickListener {
             CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
                 applyAppearance(); renderTaskbar(); refreshTasks()
             }, ::showSetup)
         }
-        binding.startMenu.settingsButton.contentDescription = "Device settings"
         binding.startMenu.settingsButton.setOnClickListener { launchSafely(Intent(Settings.ACTION_SETTINGS)) }
-        binding.startMenu.folderButton.contentDescription = "Open files"
         binding.startMenu.folderButton.setOnClickListener {
             launchSafely(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE); type = "*/*"
             })
         }
-        binding.startMenu.powerButton.contentDescription = "Power menu"
         binding.startMenu.powerButton.setOnClickListener { withService { it.showPowerMenu() } }
-        binding.taskbar.homeButton.contentDescription = "Minimize all windows"
         binding.taskbar.homeButton.setOnClickListener { windows.minimizeAll(); binding.startMenu.root.visibility = View.INVISIBLE }
-        binding.taskbar.backButton.contentDescription = "Back in focused app"
         binding.taskbar.backButton.setOnClickListener {
             val target = windows.getWindows().lastOrNull { !it.minimized }
             if (target == null) binding.startMenu.root.visibility = View.INVISIBLE
@@ -141,7 +135,6 @@ class MainActivity : AppCompatActivity() {
                 remote.injectInputEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK), target.displayId)
             }
         }
-        binding.taskbar.recentsButton.contentDescription = "Refresh running tasks"
         binding.taskbar.recentsButton.setOnClickListener { refreshTasks(); binding.taskbar.taskbarApps.smoothScrollToPosition(0) }
     }
 
@@ -183,20 +176,18 @@ class MainActivity : AppCompatActivity() {
         setupDialog?.dismiss()
         val state = RemoteServiceHelper.getState()
         setupDialog = MaterialAlertDialogBuilder(this)
-            .setTitle("Set up desktop access")
-            .setMessage("Compound needs root or Shizuku to launch and manage app windows. Root is tried first.\n\n" +
-                "For Shizuku: install and open Shizuku, start it using wireless debugging or root, then return here and grant Compound access.\n\n" +
-                RemoteServiceHelper.getStatusMessage())
+            .setTitle(R.string.set_up_desktop_access)
+            .setMessage(getString(R.string.compound_needs_root_or_shizuku_to_launch_and_manage_app_windows_root_is_tried_first, RemoteServiceHelper.getStatusMessage()))
             .setPositiveButton(if (state == RemoteServiceHelper.State.PERMISSION_REQUIRED || state == RemoteServiceHelper.State.PERMISSION_DENIED) "Grant access" else "Retry") { _, _ ->
                 if (state == RemoteServiceHelper.State.PERMISSION_REQUIRED || state == RemoteServiceHelper.State.PERMISSION_DENIED) RemoteServiceHelper.requestPermission()
                 else RemoteServiceHelper.retry(applicationContext)
             }
-            .setNeutralButton("Open Shizuku") { _, _ ->
+            .setNeutralButton(R.string.open_shizuku) { _, _ ->
                 val intent = packageManager.getLaunchIntentForPackage("moe.shizuku.privileged.api")
-                    ?: Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://shizuku.rikka.app/download/"))
+                    ?: Intent(Intent.ACTION_VIEW, "https://shizuku.rikka.app/download/".toUri())
                 launchSafely(intent)
             }
-            .setNegativeButton("Later", null)
+            .setNegativeButton(getString(R.string.later), null)
             .show()
     }
 
@@ -227,7 +218,11 @@ class MainActivity : AppCompatActivity() {
                         renderTaskbar()
                     }
                         .onFailure {
-                            if (!taskErrorShown) { message("Task list unavailable: ${it.message ?: "unsupported device API"}"); taskErrorShown = true }
+                            if (!taskErrorShown) { message(
+                                getString(
+                                    R.string.task_list_unavailable,
+                                    it.message ?: getString(R.string.unsupported_device_api)
+                                )); taskErrorShown = true }
                         }
                 }
             }
@@ -252,13 +247,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun focusEntry(entry: TaskbarEntry) {
         if (entry.hosted) windows.focusDisplay(entry.displayId)
-        else entry.taskId?.let { id -> withService { if (!it.focusTask(id)) error("Task is no longer available") } }
+        else entry.taskId?.let { id -> withService { if (!it.focusTask(id)) error(getString(R.string.task_is_no_longer_available)) } }
         binding.startMenu.root.visibility = View.INVISIBLE
     }
 
     private fun closeEntry(entry: TaskbarEntry) {
         if (entry.hosted) windows.closeDisplay(entry.displayId)
-        else entry.taskId?.let { id -> withService { if (!it.removeTask(id)) error("Task is no longer available") } }
+        else entry.taskId?.let { id -> withService { if (!it.removeTask(id)) error(getString(R.string.task_is_no_longer_available)) } }
     }
 
     private fun withService(action: (IRemoteService) -> Unit) {
@@ -266,13 +261,13 @@ class MainActivity : AppCompatActivity() {
         worker.execute {
             val result = runCatching { action(remote) }
             handler.post {
-                if (!destroyed) { result.exceptionOrNull()?.let { message(it.message ?: "Operation failed") }; refreshTasks() }
+                if (!destroyed) { result.exceptionOrNull()?.let { message(it.message ?: getString(R.string.operation_failed)) }; refreshTasks() }
             }
         }
     }
 
     private fun launchSafely(intent: Intent) {
-        try { startActivity(intent) } catch (_: Exception) { message("No app can open this action") }
+        try { startActivity(intent) } catch (_: Exception) { message(getString(R.string.no_app_can_open_this_action)) }
     }
     private fun message(text: String) { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
 
