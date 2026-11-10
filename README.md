@@ -1,6 +1,7 @@
 # Compound
 Compound is a sleek modern desktop for Android with custom app window decorations and window management.
 ![image](https://github.com/user-attachments/assets/25c09157-7c6d-4b46-8c8e-b2957bed84cf)
+<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/2ea65630-bb9c-4e26-9160-33ba85f9cb23" />
 
 It hosts apps on virtual displays, with draggable/resizable windows and a running-app taskbar. Android 12 (API 31) or newer is required.
 
