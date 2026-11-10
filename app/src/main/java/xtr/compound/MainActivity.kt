@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity() {
             legacyMenuBlur.refresh()
         }
         binding.taskbar.startMenuButton.setOnLongClickListener { showSetup(); true }
-        binding.startMenu.settingsButton.setOnClickListener {
+        binding.startMenu.editButton.setOnClickListener {
             CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
                 applyAppearance(); taskbar.setIconsOnly(appearance.taskbarIconsOnly); renderTaskbar(); refreshTasks()
             }, ::showSetup)
