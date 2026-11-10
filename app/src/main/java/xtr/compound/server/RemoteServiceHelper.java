@@ -140,20 +140,18 @@ public final class RemoteServiceHelper {
 
     public static void requestPermission() {
         MAIN.post(() -> {
-            if (appContext == null) return;
+            if (appContext == null) {
+                setState(State.ERROR, "Compound is not ready to request Shizuku permission. Retry setup.");
+                return;
+            }
             if (!Shizuku.pingBinder()) {
                 setState(State.SHIZUKU_UNAVAILABLE, "Start Shizuku, then tap Retry.");
                 return;
             }
             try {
-                if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                    bindShizukuService();
-                } else {
-                    permissionWasRequested = true;
-                    setState(State.PERMISSION_REQUIRED, "Waiting for Shizuku permission.");
-                    Shizuku.requestPermission(REQUEST_CODE);
-                }
+                requestShizukuPermissionOrBind();
             } catch (RuntimeException e) {
+                permissionWasRequested = false;
                 setState(State.ERROR, "Could not request Shizuku permission: " + messageOf(e));
             }
         });
@@ -229,11 +227,38 @@ public final class RemoteServiceHelper {
             return;
         }
         try {
-            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) bindShizukuService();
-            else setState(permissionWasRequested ? State.PERMISSION_DENIED : State.PERMISSION_REQUIRED,
-                    permissionWasRequested ? "Shizuku access was denied. Grant access, then retry." : "Grant Compound permission in Shizuku.");
+            if (Shizuku.isPreV11()) {
+                permissionWasRequested = false;
+                setState(State.ERROR, "This Shizuku version is too old. Update Shizuku to version 11 or later.");
+            } else if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                permissionWasRequested = false;
+                bindShizukuService();
+            } else {
+                permissionWasRequested = false;
+                setState(State.PERMISSION_REQUIRED, "Grant Compound permission in Shizuku.");
+            }
         } catch (RuntimeException e) {
+            permissionWasRequested = false;
             setState(State.ERROR, "Could not check Shizuku permission: " + messageOf(e));
+        }
+    }
+
+    /** Must be called from the explicit Grant access action; Shizuku may show user-facing UI. */
+    private static void requestShizukuPermissionOrBind() {
+        if (Shizuku.isPreV11()) {
+            permissionWasRequested = false;
+            setState(State.ERROR, "This Shizuku version is too old. Update Shizuku to version 11 or later.");
+        } else if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+            permissionWasRequested = false;
+            bindShizukuService();
+        } else if (Shizuku.shouldShowRequestPermissionRationale()) {
+            permissionWasRequested = false;
+            setState(State.PERMISSION_DENIED,
+                    "Shizuku permission was denied before. Grant Compound access from Shizuku, then retry.");
+        } else {
+            permissionWasRequested = true;
+            setState(State.PERMISSION_REQUIRED, "Waiting for Shizuku permission.");
+            Shizuku.requestPermission(REQUEST_CODE);
         }
     }
 
