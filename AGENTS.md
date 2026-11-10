@@ -1,6 +1,6 @@
 # Working on Compound
 
-Compound hosts Android applications on virtual displays inside a desktop Activity. The app uses Kotlin/Java, ViewBinding, AIDL, Gradle 9.5.1 and AGP 9.2.1. Use JDK 21; minSdk is 31, compileSdk 37 and targetSdk 35. Keep SDK/dependency upgrades separate unless required to fix a demonstrated issue.
+Compound hosts Android applications on virtual displays inside a desktop Activity. The app uses Kotlin/Java, ViewBinding, AIDL, Gradle 9.5.1 and AGP 9.2.1. Use an installed JDK supported by the checked-in Gradle and Android Gradle Plugin; the build does not pin a daemon JDK. MinSdk is 31, compileSdk 37 and targetSdk 35. Keep SDK/dependency upgrades separate unless required to fix a demonstrated issue.
 
 ## Architecture and privileges
 

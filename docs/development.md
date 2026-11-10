@@ -2,7 +2,7 @@
 
 ## Build environment
 
-Use JDK 21, the checked-in Gradle wrapper, Android SDK platform `platforms;android-37.0`, and build tools `36.0.0`. The project keeps minSdk 31 and targetSdk 35. Configure `ANDROID_HOME` or an untracked `local.properties`; never commit machine-specific SDK paths.
+Use an installed JDK supported by the checked-in Gradle and Android Gradle Plugin, the checked-in Gradle wrapper, Android SDK platform `platforms;android-37.0`, and build tools `36.0.0`. The build uses the JVM that launches Gradle and does not pin a daemon JDK. The project keeps minSdk 31 and targetSdk 35. Configure `ANDROID_HOME` or an untracked `local.properties`; never commit machine-specific SDK paths.
 
 ```sh
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assembleDebugAndroidTest
@@ -10,7 +10,7 @@ Use JDK 21, the checked-in Gradle wrapper, Android SDK platform `platforms;andro
 
 Debug APKs are under `app/build/outputs/apk/debug/` and `app/build/outputs/apk/androidTest/debug/`. Unit-test reports are under `app/build/reports/tests/testDebugUnitTest/`; lint is `app/build/reports/lint-results-debug.html`. The pull request GitHub Actions workflow builds, tests, lints and uploads APK/reports; it does not run privileged device instrumentation. Pushing a `v*` tag runs the same checks and publishes the debug-signed APK as a GitHub Release asset.
 
-The Gradle daemon requests Java 21 through `gradle/gradle-daemon-jvm.properties`. Keep the wrapper checksum pinned. A successful incremental build is useful, but use a clean build when diagnosing stale generated AIDL/binding classes.
+Keep the wrapper checksum pinned. A successful incremental build is useful, but use a clean build when diagnosing stale generated AIDL/binding classes.
 
 ## Device setup
 

@@ -1,6 +1,6 @@
 # Validation checklist
 
-Run `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` with JDK 21. CI uses the same commands. Unit tests cover pure state/geometry/policy; they cannot establish privileged Binder or compositor compatibility.
+Run `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug` with an installed JDK supported by the checked-in Gradle and Android Gradle Plugin. CI uses the same commands. Unit tests cover pure state/geometry/policy; they cannot establish privileged Binder or compositor compatibility.
 
 ## Device scenarios
 
@@ -38,3 +38,9 @@ Results from the implementation run are recorded below before delivery. A build 
 ### Visibility regression follow-up — 2026-11-09
 
 Snapshot installation can request layout without changing bounds. Refreshing on every such layout could repeatedly hide the taskbar/menu while recapturing. Refresh listeners now require a real geometry change. Captures cancel queued frame work and restore alpha on disable/close or after a 250 ms timeout; stale copy results are discarded. Required build, nine unit tests, lint and instrumentation APK compilation passed. Samsung SM-A155F / API 36 / Shizuku shell: **OK (7 tests)**, including a new real-desktop check that the taskbar and open start menu remain visible across unchanged layout requests. Live compositor blur remains unavailable on this device.
+
+### Snapshot opacity follow-up — 2026-11-10
+
+- Debug build, unit tests, lint, and Android test APK compilation passed. The focused `desktopControlsRemainVisibleAfterFallbackLayout` instrumentation test passed on Waydroid x86_64 / Android 13 / API 33. It checks the transparent taskbar container, separate snapshot/tint layers, opaque snapshot pixels at 0/50/100% tint opacity, and unchanged taskbar/menu controls.
+- On-device settings sliders reached 0%, 50%, and 100% opacity and 0 dp blur; the dialog reports live blur unavailable and uses the snapshot fallback. Live compositor blur and behavior on other Android devices remain unverified.
+- The repository no longer pins the Gradle daemon to JDK 21. The final build and unit/lint checks use the installed JDK 25.

@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.LayerDrawable
 import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
 import android.view.View
@@ -195,12 +198,24 @@ class DesktopIntegrationTest {
             Thread.sleep(600)
             scenario.onActivity { activity ->
                 val background = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
+                assertEquals("Taskbar container must not overlay the snapshot with a fixed tint",
+                    Color.TRANSPARENT,
+                    (activity.findViewById<View>(R.id.taskbar).background as ColorDrawable).color)
                 taskbarSnapshot = background.drawable
-                assertTrue("Taskbar should snapshot the Activity window behind its in-window surface",
-                    taskbarSnapshot is android.graphics.drawable.BitmapDrawable)
+                assertTrue("Taskbar should layer the snapshot and tint separately",
+                    taskbarSnapshot is LayerDrawable)
+                val snapshotBitmap = ((taskbarSnapshot as LayerDrawable).getDrawable(0) as BitmapDrawable).bitmap
                 assertEquals(expectedSnapshotColor,
-                    (taskbarSnapshot as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
-                        background.width / 2, background.height / 2))
+                    snapshotBitmap.getPixel(background.width / 2, background.height / 2))
+                val taskbarHelperField = MainActivity::class.java.getDeclaredField("legacyTaskbarBlur")
+                    .apply { isAccessible = true }
+                val taskbarHelper = taskbarHelperField.get(activity) as LegacyBackgroundBlur
+                listOf(0, 50, 100).forEach { opacity ->
+                    taskbarHelper.update(true, LiveBackgroundBlur.fallbackTint(opacity, false), 25f)
+                    assertSnapshotTintOpacity(background, opacity)
+                }
+                taskbarHelper.update(true, LiveBackgroundBlur.fallbackTint(50, false), 0f)
+                assertSnapshotTintOpacity(background, 50)
                 activity.findViewById<View>(R.id.startMenuButton).performClick()
             }
             Thread.sleep(600)
@@ -208,11 +223,21 @@ class DesktopIntegrationTest {
                 val menu = activity.findViewById<View>(R.id.startMenu)
                 val menuBackground = activity.findViewById<android.widget.ImageView>(R.id.background)
                 menuSnapshot = menuBackground.drawable
-                assertTrue("Start menu should snapshot the Activity window behind its in-window surface",
-                    menuSnapshot is android.graphics.drawable.BitmapDrawable)
+                assertTrue("Start menu should layer the snapshot and tint separately",
+                    menuSnapshot is LayerDrawable)
+                val snapshotBitmap = ((menuSnapshot as LayerDrawable).getDrawable(0) as BitmapDrawable).bitmap
                 assertEquals(expectedSnapshotColor,
-                    (menuSnapshot as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
-                        menuBackground.width / 2, menuBackground.height / 2))
+                    snapshotBitmap.getPixel(menuBackground.width / 2, menuBackground.height / 2))
+                val menuHelperField = MainActivity::class.java.getDeclaredField("legacyMenuBlur")
+                    .apply { isAccessible = true }
+                val menuHelper = menuHelperField.get(activity) as LegacyBackgroundBlur
+                listOf(0, 50, 100).forEach { opacity ->
+                    menuHelper.update(true, LiveBackgroundBlur.fallbackTint(opacity, false), 25f)
+                    assertSnapshotTintOpacity(menuBackground, opacity)
+                }
+                menuHelper.update(true, LiveBackgroundBlur.fallbackTint(50, false), 0f)
+                assertSnapshotTintOpacity(menuBackground, 50)
+                assertEquals(1f, activity.findViewById<View>(R.id.startMenuButton).alpha, 0f)
                 val taskbarBackground = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
                 repeat(4) { taskbarBackground.requestLayout() }
                 repeat(4) { menu.requestLayout(); menuBackground.requestLayout() }
@@ -238,6 +263,15 @@ class DesktopIntegrationTest {
                 assertEquals(1f, activity.findViewById<View>(R.id.taskbar).alpha, 0f)
             }
         }
+    }
+
+    private fun assertSnapshotTintOpacity(image: android.widget.ImageView, opacity: Int) {
+        val layers = image.drawable as LayerDrawable
+        val bitmap = (layers.getDrawable(0) as BitmapDrawable).bitmap
+        val tint = layers.getDrawable(1) as ColorDrawable
+        assertEquals("Snapshot layer stays opaque at $opacity% tint opacity", 0xFF,
+            bitmap.getPixel(bitmap.width / 2, bitmap.height / 2) ushr 24)
+        assertEquals("Tint layer follows $opacity% opacity", opacity * 255 / 100, tint.color ushr 24)
     }
 
     /** Service-side failures must survive Parcel's exception encoding used by Binder. */

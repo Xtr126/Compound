@@ -4,7 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.RenderEffect
 import android.graphics.Shader
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Handler
 import android.os.Looper
 import android.view.PixelCopy
@@ -22,6 +24,9 @@ class LegacyBackgroundBlur(
     private val originalImage = image.drawable
     private val originalForeground = image.foreground
     private var snapshot: Bitmap? = null
+    private var displayedSnapshot: Bitmap? = null
+    private var snapshotLayers: LayerDrawable? = null
+    private var tintLayer: ColorDrawable? = null
     private var capturing = false
     private var closed = false
     private var enabled = false
@@ -44,6 +49,7 @@ class LegacyBackgroundBlur(
             image.foreground = originalForeground
             image.setRenderEffect(null)
         } else {
+            tintLayer?.setColor(tint)
             applySnapshot()
             if (snapshot == null) refresh()
         }
@@ -113,8 +119,18 @@ class LegacyBackgroundBlur(
 
     private fun applySnapshot() {
         val bitmap = snapshot ?: return
-        image.setImageBitmap(bitmap)
-        image.foreground = ColorDrawable(tint)
+        if (displayedSnapshot !== bitmap || snapshotLayers == null || tintLayer == null ||
+            image.drawable !== snapshotLayers) {
+            val snapshotDrawable = BitmapDrawable(image.resources, bitmap)
+            val tintDrawable = ColorDrawable(tint)
+            snapshotLayers = LayerDrawable(arrayOf(snapshotDrawable, tintDrawable))
+            tintLayer = tintDrawable
+            displayedSnapshot = bitmap
+            image.setImageDrawable(snapshotLayers)
+        } else {
+            tintLayer?.setColor(tint)
+        }
+        image.foreground = null
         image.setRenderEffect(if (radius > 0f)
             RenderEffect.createBlurEffect(radius, radius, Shader.TileMode.CLAMP) else null)
     }
@@ -130,5 +146,8 @@ class LegacyBackgroundBlur(
         closed = true
         update(false, tint, radius)
         snapshot = null
+        displayedSnapshot = null
+        snapshotLayers = null
+        tintLayer = null
     }
 }

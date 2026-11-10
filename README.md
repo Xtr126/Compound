@@ -38,7 +38,7 @@ Live blur uses Android's compositor through a hidden framework helper. Device su
 
 ## Build and validation
 
-Use JDK 21 and an Android SDK with `platforms;android-37.0` and build tools 36.0.0. Set `sdk.dir` in your untracked `local.properties` or configure `ANDROID_HOME`.
+Use an installed JDK supported by the checked-in Gradle and Android Gradle Plugin, plus an Android SDK with `platforms;android-37.0` and build tools 36.0.0. The build uses the JVM that launches Gradle and does not pin a daemon JDK. Set `sdk.dir` in your untracked `local.properties` or configure `ANDROID_HOME`.
 
 ```sh
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
