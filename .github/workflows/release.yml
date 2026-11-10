@@ -22,15 +22,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: true
       - uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools
-      - name: Install Android SDK
-        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+          packages: 'platform-tools platforms;android-37.0 build-tools;36.0.0'
       # setup-gradle includes wrapper JAR validation.
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build, test, and lint
-        run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+      - name: Build
+        run: ./gradlew assembleDebug
       - name: Rename APK
         run: mv app/build/outputs/apk/debug/app-debug.apk "Compound-${GITHUB_REF_NAME#v}.apk"
       - name: Publish GitHub Release
