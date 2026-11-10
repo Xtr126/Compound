@@ -1,9 +1,9 @@
 package xtr.compound
 
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.content.res.Configuration
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
 import android.view.WindowManager
@@ -81,7 +81,9 @@ class LiveBackgroundBlur(
     fun update(opacityPercent: Int, blurRadiusDp: Int) {
         pendingOpacityPercent = opacityPercent.coerceIn(0, 100)
         pendingBlurRadiusDp = blurRadiusDp.coerceIn(0, 100)
-        val tint = Color.argb(pendingOpacityPercent * 255 / 100, 0x18, 0x1A, 0x20)
+        val nightMode = view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+            Configuration.UI_MODE_NIGHT_YES
+        val tint = themeTint(pendingOpacityPercent, nightMode)
         fallbackDrawable?.setColor(tint)
         blurDrawable?.let { drawable ->
             runCatching { colorMethod?.invoke(drawable, tint) }
@@ -212,5 +214,13 @@ class LiveBackgroundBlur(
         fallbackDrawable = null
         publishAvailability(false)
         onAvailabilityChanged = null
+    }
+
+    companion object {
+        internal fun themeTint(opacityPercent: Int, nightMode: Boolean): Int {
+            val alpha = opacityPercent.coerceIn(0, 100) * 255 / 100
+            val base = if (nightMode) 0xFF181A20.toInt() else 0xFFF4F5F8.toInt()
+            return (alpha shl 24) or (base and 0x00FFFFFF)
+        }
     }
 }

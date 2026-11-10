@@ -2,4 +2,8 @@
 <resources>
     <color name="cardBackgroundTranslucent">#33000000</color>
     <color name="taskbarBackgroundTranslucent" />
+    <color name="compoundSurface">#FF181A20</color>
+    <color name="compoundOnSurface">#FFE4E4E9</color>
+    <color name="compoundOnSurfaceVariant">#FFC5C7D0</color>
+    <color name="settingsDialogScrim">#DD181A20</color>
 </resources>

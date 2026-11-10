@@ -63,6 +63,7 @@ object CompoundSettingsDialog {
         fun text(label: String, description: String? = null) = TextView(activity).apply {
             text = label
             contentDescription = description ?: label
+            setTextColor(activity.getColor(R.color.compoundOnSurface))
             setPadding(0, (8 * density).toInt(), 0, (4 * density).toInt())
         }
         fun slider(description: String) = Slider(activity).apply {
@@ -157,6 +158,12 @@ object CompoundSettingsDialog {
                 scaleType = android.widget.ImageView.ScaleType.FIT_XY
             }
             panel.addView(background, 0, android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            val surfaceScrim = View(activity).apply {
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                setBackgroundColor(activity.getColor(R.color.settingsDialogScrim))
+            }
+            panel.addView(surfaceScrim, 1, android.widget.FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
             val legacy = LegacyBackgroundBlur(background, panel, activity.window, hideOverlay = false)
             dialogBlur = LiveBackgroundBlur(background, 28f, legacy).also { helper ->

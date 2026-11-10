@@ -1,8 +1,12 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Theme.Compound" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Keep content and surfaces paired for readable text in either system theme. -->
+        <item name="colorSurface">@color/compoundSurface</item>
+        <item name="colorOnSurface">@color/compoundOnSurface</item>
+        <item name="colorOnSurfaceVariant">@color/compoundOnSurfaceVariant</item>
+        <item name="android:textColorPrimary">@color/compoundOnSurface</item>
+        <item name="android:textColorSecondary">@color/compoundOnSurfaceVariant</item>
     </style>
 
 
