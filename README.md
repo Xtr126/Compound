@@ -8,7 +8,7 @@ It hosts apps on virtual displays, with draggable/resizable windows and a runnin
 
 Install the APK from the latest GitHub Release, or download the debug APK from a pull request's **Android build** GitHub Actions artifact. You can also build it locally. Compound uses its system-app service when installed with the necessary platform privileges; otherwise it tries root first, then Shizuku.
 
-For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), open it, and follow its wireless-debugging startup instructions. Open Compound, choose **Grant access**, and accept Shizuku's permission dialog. Non-root Shizuku normally needs restarting after a device reboot. Setup explains missing permissions or connection errors and offers retry. Open it again from Compound settings or by holding the start-menu button.
+For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), open it, and follow its wireless-debugging startup instructions. Open Compound, choose **Grant access**, and accept Shizuku's permission dialog. Compound uses Shizuku's v11+ runtime permission API; update older Shizuku versions before granting access. If Shizuku reports that permission was previously denied, grant Compound access from Shizuku and retry. Non-root Shizuku normally needs restarting after a device reboot. Setup explains missing permissions or connection errors and offers retry. Open it again from Compound settings or by holding the start-menu button.
 
 ## Desktop controls
 
