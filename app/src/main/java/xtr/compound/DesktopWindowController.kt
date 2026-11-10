@@ -296,6 +296,23 @@ class DesktopWindowController(
     }
 
     private fun configureResizeHandles(binding: AppWindowBinding, enabled: Boolean) {
+        listOf(
+            binding.borderLeft,
+            binding.borderRight,
+            binding.borderBottom,
+            binding.resizeBottomLeft,
+            binding.resizeBottomRight,
+            binding.resizeTopLeft,
+            binding.resizeTopRight
+        ).forEach { handle ->
+            handle.isClickable = enabled
+            handle.isFocusable = enabled
+            handle.importantForAccessibility = if (enabled) {
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            } else {
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+        }
         binding.borderLeft.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW) else null
         binding.borderRight.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW) else null
         binding.borderBottom.pointerIcon = if (enabled) PointerIcon.getSystemIcon(context, PointerIcon.TYPE_VERTICAL_DOUBLE_ARROW) else null
