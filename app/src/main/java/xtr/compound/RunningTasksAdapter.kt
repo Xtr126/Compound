@@ -154,6 +154,9 @@ class RunningTasksAdapter(
         holder.stateIcon.setImageDrawable(stateResource?.let {
             androidx.appcompat.content.res.AppCompatResources.getDrawable(context, it)?.mutate()
         })
+        holder.stateIcon.imageTintList = android.content.res.ColorStateList.valueOf(
+            context.getColor(R.color.compoundOnSurface)
+        )
         holder.label.text = appLabel + if (entry.minimized) " (minimized)" else ""
         val active = entry.key == activeKey
         holder.indicator.visibility = if (iconOnly && active) View.VISIBLE else View.INVISIBLE
