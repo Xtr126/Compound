@@ -1,5 +1,6 @@
 package xtr.compound
 
+import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -19,7 +20,9 @@ import java.util.function.Consumer
 class LiveBackgroundBlur(
     private val view: View,
     private val cornerRadiusDp: Float = 0f,
-    private val legacy: LegacyBackgroundBlur? = null
+    private val legacy: LegacyBackgroundBlur? = null,
+    /** Live cross-window blur only works when this view overlays a distinct window. */
+    private val allowLiveBlur: Boolean = true
 ) : AutoCloseable {
     private val windowManager = view.context.getSystemService(WindowManager::class.java)
     private val density = view.resources.displayMetrics.density
@@ -45,8 +48,12 @@ class LiveBackgroundBlur(
 
     private val attachListener = object : OnAttachStateChangeListener {
         override fun onViewAttachedToWindow(v: View) {
-            registerBlurListener()
-            createDrawableIfNeeded()
+            if (allowLiveBlur) {
+                registerBlurListener()
+                createDrawableIfNeeded()
+            } else {
+                installFallback()
+            }
             updateAvailability()
         }
 
@@ -63,7 +70,7 @@ class LiveBackgroundBlur(
     init {
         if (Build.VERSION.SDK_INT >= 31) {
             view.addOnAttachStateChangeListener(attachListener)
-            if (view.isAttachedToWindow) {
+            if (allowLiveBlur && view.isAttachedToWindow) {
                 registerBlurListener()
                 createDrawableIfNeeded()
             } else {
@@ -77,16 +84,17 @@ class LiveBackgroundBlur(
         update(pendingOpacityPercent, pendingBlurRadiusDp)
     }
 
-    /** Apply opacity as a dark translucent tint and blur in density-independent pixels. */
+    /** Apply a restrained theme tint over the live blur and opacity to its fallback. */
     fun update(opacityPercent: Int, blurRadiusDp: Int) {
         pendingOpacityPercent = opacityPercent.coerceIn(0, 100)
         pendingBlurRadiusDp = blurRadiusDp.coerceIn(0, 100)
         val nightMode = view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
             Configuration.UI_MODE_NIGHT_YES
-        val tint = themeTint(pendingOpacityPercent, nightMode)
+        val tint = fallbackTint(pendingOpacityPercent, nightMode)
+        val liveTint = liveTint(pendingOpacityPercent, nightMode)
         fallbackDrawable?.setColor(tint)
         blurDrawable?.let { drawable ->
-            runCatching { colorMethod?.invoke(drawable, tint) }
+            runCatching { colorMethod?.invoke(drawable, liveTint) }
             val effectiveRadius = if (isAvailable) pendingBlurRadiusDp else 0
             runCatching { blurRadiusMethod?.invoke(drawable, (effectiveRadius * density).toInt()) }
             runCatching { cornerRadiusMethod?.invoke(drawable, cornerRadiusDp * density) }
@@ -127,7 +135,7 @@ class LiveBackgroundBlur(
     }
 
     private fun createDrawableIfNeeded() {
-        if (closed || blurDrawable != null || Build.VERSION.SDK_INT < 31) return
+        if (!allowLiveBlur || closed || blurDrawable != null || Build.VERSION.SDK_INT < 31) return
         try {
             // The app targets a recent SDK, so these hidden members are blocked on stock builds
             // unless explicitly exempted. Keep the exemptions restricted to the three API classes
@@ -217,6 +225,25 @@ class LiveBackgroundBlur(
     }
 
     companion object {
+        private const val MAX_LIVE_TINT_ALPHA = 0x66
+
+        internal fun fallbackTint(opacityPercent: Int, nightMode: Boolean): Int {
+            val alpha = opacityPercent.coerceIn(0, 100) * 255 / 100
+            return if (nightMode) argb(alpha, 0x18, 0x1A, 0x20)
+            else argb(alpha, 0xF4, 0xF5, 0xF8)
+        }
+
+        internal fun liveTint(opacityPercent: Int, nightMode: Boolean): Int {
+            // BackgroundBlurDrawable draws its color over the blurred pixels. Applying the full
+            // fallback opacity here masks the blur (80% black at the default setting). Keep the
+            // live tint translucent while preserving the slider's relative strength.
+            val alpha = opacityPercent.coerceIn(0, 100) * MAX_LIVE_TINT_ALPHA / 100
+            return if (nightMode) argb(alpha, 0x18, 0x1A, 0x20)
+            else argb(alpha, 0xF4, 0xF5, 0xF8)
+        }
+
+        private fun argb(alpha: Int, red: Int, green: Int, blue: Int) =
+            (alpha shl 24) or (red shl 16) or (green shl 8) or blue
         internal fun themeTint(opacityPercent: Int, nightMode: Boolean): Int {
             val alpha = opacityPercent.coerceIn(0, 100) * 255 / 100
             val base = if (nightMode) 0xFF181A20.toInt() else 0xFFF4F5F8.toInt()

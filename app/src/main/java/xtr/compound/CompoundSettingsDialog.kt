@@ -21,18 +21,29 @@ object CompoundSettingsDialog {
     class Controller internal constructor(
         private val blurAvailable: () -> Boolean,
         private val blurSlider: Slider,
-        private val availabilityText: TextView
+        private val availabilityText: TextView,
+        private val refreshTint: () -> Unit
     ) {
         fun refreshAvailability() {
             val available = blurAvailable()
             blurSlider.isEnabled = true
             availabilityText.visibility = if (available) View.GONE else View.VISIBLE
         }
+
+        fun refreshAppearance() {
+            refreshTint()
+            refreshAvailability()
+        }
     }
 
     /** Refresh the currently displayed dialog after the system's blur state changes. */
     fun refreshAvailability() {
         activeController?.refreshAvailability()
+    }
+
+    /** Reapply theme-derived blur tint after an in-place light/dark mode change. */
+    fun refreshAppearance() {
+        activeController?.refreshAppearance()
     }
 
     /** Dismiss the current dialog, if any, for the owning activity's teardown. */
@@ -194,7 +205,12 @@ object CompoundSettingsDialog {
             }
         }
         dialog.show()
-        return Controller({ blurAvailable() && dialogBlur?.isAvailable == true }, blur, availability).also {
+        return Controller(
+            { blurAvailable() && dialogBlur?.isAvailable == true },
+            blur,
+            availability,
+            { dialogBlur?.update(settings.opacityPercent, settings.blurRadiusDp) }
+        ).also {
             activeDialog = dialog
             activeController = it
             it.refreshAvailability()
