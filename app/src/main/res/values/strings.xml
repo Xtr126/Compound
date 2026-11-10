@@ -21,6 +21,8 @@
     <string name="minimize_all_windows">Minimize all windows</string>
     <string name="back_in_focused_app">Back in focused app</string>
     <string name="refresh_running_tasks">Refresh running tasks</string>
+    <string name="open_wifi_settings">Open Wi-Fi settings</string>
+    <string name="open_battery_settings">Open battery and power settings</string>
     <string name="set_up_desktop_access">Set up desktop access</string>
     <string name="compound_needs_root_or_shizuku_to_launch_and_manage_app_windows_root_is_tried_first">Compound needs root or Shizuku to launch and manage app windows. Root is tried first.\n\nFor Shizuku: install and open Shizuku, start it using wireless debugging or root, then return here and grant Compound access.\n\n%1$s</string>
     <string name="open_shizuku">Open Shizuku</string>
