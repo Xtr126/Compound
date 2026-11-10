@@ -4,7 +4,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 
-/** Resizes a window edge while preserving its opposite edge and desktop bounds. */
+/** Resizes a window edge or corner while preserving opposite edges and desktop bounds. */
 class TouchToResizeListener(private val window: View, private val type: Int) : View.OnTouchListener {
     private var startRawX = 0f
     private var startRawY = 0f
@@ -29,15 +29,19 @@ class TouchToResizeListener(private val window: View, private val type: Int) : V
             MotionEvent.ACTION_MOVE -> {
                 val dx = (event.rawX - startRawX).toInt()
                 val dy = (event.rawY - startRawY).toInt()
-                when (type) {
-                    HORIZONTAL_RIGHT -> lp.width = (startWidth + dx).coerceIn(MIN_SIZE, (parent.width - startX).toInt().coerceAtLeast(MIN_SIZE))
-                    HORIZONTAL_LEFT -> {
-                        val left = (startX + dx).toInt().coerceIn(0, (startX + startWidth - MIN_SIZE).toInt().coerceAtLeast(0))
-                        lp.width = (startWidth + startX.toInt() - left).coerceAtLeast(MIN_SIZE)
-                        lp.leftMargin = left
-                        window.translationX = 0f
-                    }
-                    VERTICAL -> lp.height = (startHeight + dy).coerceIn(MIN_SIZE, (parent.height - startY).toInt().coerceAtLeast(MIN_SIZE))
+                val bounds = WindowResizeGeometry.resize(
+                    type, startX, startY, startWidth, startHeight, dx, dy,
+                    parent.width, parent.height, MIN_SIZE
+                )
+                lp.width = bounds.width
+                lp.height = bounds.height
+                if (type == HORIZONTAL_LEFT || type == BOTTOM_LEFT || type == TOP_LEFT) {
+                    lp.leftMargin = bounds.x
+                    window.translationX = 0f
+                }
+                if (type == TOP_LEFT || type == TOP_RIGHT) {
+                    lp.topMargin = bounds.y
+                    window.translationY = 0f
                 }
                 window.layoutParams = lp
                 parent.requestLayout()
@@ -53,5 +57,9 @@ class TouchToResizeListener(private val window: View, private val type: Int) : V
         const val HORIZONTAL_LEFT = 0
         const val HORIZONTAL_RIGHT = 1
         const val VERTICAL = 2
+        const val BOTTOM_LEFT = 3
+        const val BOTTOM_RIGHT = 4
+        const val TOP_LEFT = 5
+        const val TOP_RIGHT = 6
     }
 }
