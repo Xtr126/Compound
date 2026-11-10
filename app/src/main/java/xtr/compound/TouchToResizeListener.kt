@@ -53,7 +53,7 @@ class TouchToResizeListener(private val window: View, private val type: Int) : V
     }
 
     companion object {
-        private const val MIN_SIZE = 160
+        const val MIN_SIZE = 160
         const val HORIZONTAL_LEFT = 0
         const val HORIZONTAL_RIGHT = 1
         const val VERTICAL = 2

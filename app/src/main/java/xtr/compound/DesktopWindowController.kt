@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.MainThread
+import androidx.core.view.ViewCompat
 import xtr.compound.databinding.AppWindowBinding
 import xtr.compound.server.RemoteServiceHelper
 import java.util.concurrent.ExecutorService
@@ -301,7 +302,7 @@ class DesktopWindowController(
     }
 
     private fun configureResizeHandles(binding: AppWindowBinding, enabled: Boolean) {
-        listOf(
+        val handles = listOf(
             binding.borderLeft,
             binding.borderRight,
             binding.borderBottom,
@@ -309,8 +310,9 @@ class DesktopWindowController(
             binding.resizeBottomRight,
             binding.resizeTopLeft,
             binding.resizeTopRight
-        ).forEach { handle ->
-            handle.isClickable = enabled
+        )
+        handles.forEach { handle ->
+            handle.isClickable = false
             handle.isFocusable = enabled
             handle.importantForAccessibility = if (enabled) {
                 View.IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -330,6 +332,62 @@ class DesktopWindowController(
         binding.resizeBottomRight.setOnTouchListener(if (enabled) TouchToResizeListener(binding.root, TouchToResizeListener.BOTTOM_RIGHT) else null)
         binding.resizeTopLeft.setOnTouchListener(if (enabled) TouchToResizeListener(binding.root, TouchToResizeListener.TOP_LEFT) else null)
         binding.resizeTopRight.setOnTouchListener(if (enabled) TouchToResizeListener(binding.root, TouchToResizeListener.TOP_RIGHT) else null)
+        handles.forEach { handle ->
+            ViewCompat.setAccessibilityDelegate(handle, null)
+            if (enabled) {
+                when (handle) {
+                    binding.borderLeft -> addResizeActions(handle, binding.root, TouchToResizeListener.HORIZONTAL_LEFT, width = true)
+                    binding.borderRight -> addResizeActions(handle, binding.root, TouchToResizeListener.HORIZONTAL_RIGHT, width = true)
+                    binding.borderBottom -> addResizeActions(handle, binding.root, TouchToResizeListener.VERTICAL, width = false)
+                    binding.resizeBottomLeft -> addResizeActions(handle, binding.root, TouchToResizeListener.BOTTOM_LEFT, width = true, height = true)
+                    binding.resizeBottomRight -> addResizeActions(handle, binding.root, TouchToResizeListener.BOTTOM_RIGHT, width = true, height = true)
+                    binding.resizeTopLeft -> addResizeActions(handle, binding.root, TouchToResizeListener.TOP_LEFT, width = true, height = true)
+                    binding.resizeTopRight -> addResizeActions(handle, binding.root, TouchToResizeListener.TOP_RIGHT, width = true, height = true)
+                }
+            }
+        }
+        binding.borderLeft.contentDescription = context.getString(R.string.resize_window_left_edge)
+        binding.borderRight.contentDescription = context.getString(R.string.resize_window_right_edge)
+        binding.borderBottom.contentDescription = context.getString(R.string.resize_window_bottom_edge)
+    }
+
+    private fun addResizeActions(handle: View, window: View, type: Int, width: Boolean, height: Boolean = false) {
+        val step = dp(32)
+        fun add(label: Int, dx: Int, dy: Int) {
+            ViewCompat.addAccessibilityAction(handle, context.getString(label)) { _, _ ->
+                val parent = window.parent as? ViewGroup ?: return@addAccessibilityAction false
+                val bounds = WindowResizeGeometry.resize(
+                    type, window.x, window.y, window.width, window.height, dx, dy,
+                    parent.width, parent.height, TouchToResizeListener.MIN_SIZE
+                )
+                val lp = window.layoutParams as? FrameLayout.LayoutParams ?: return@addAccessibilityAction false
+                if (bounds.width == lp.width && bounds.height == lp.height &&
+                    bounds.x == lp.leftMargin && bounds.y == lp.topMargin
+                ) return@addAccessibilityAction false
+                lp.width = bounds.width
+                lp.height = bounds.height
+                lp.leftMargin = bounds.x
+                lp.topMargin = bounds.y
+                window.translationX = 0f
+                window.translationY = 0f
+                window.layoutParams = lp
+                parent.requestLayout()
+                true
+            }
+        }
+        if (width) {
+            val left = type == TouchToResizeListener.HORIZONTAL_LEFT || type == TouchToResizeListener.BOTTOM_LEFT || type == TouchToResizeListener.TOP_LEFT
+            add(R.string.increase_window_width, if (left) -step else step, 0)
+            add(R.string.decrease_window_width, if (left) step else -step, 0)
+        }
+        if (height) {
+            val top = type == TouchToResizeListener.TOP_LEFT || type == TouchToResizeListener.TOP_RIGHT
+            add(R.string.increase_window_height, 0, if (top) -step else step)
+            add(R.string.decrease_window_height, 0, if (top) step else -step)
+        } else if (!width) {
+            add(R.string.increase_window_height, 0, step)
+            add(R.string.decrease_window_height, 0, -step)
+        }
     }
 
     private fun bindingMaximizeLabel(record: Record) {

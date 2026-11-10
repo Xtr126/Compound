@@ -6,6 +6,13 @@
     <string name="maximize_window">Maximize window</string>
     <string name="restore_window">Restore window</string>
     <string name="close_window">Close window</string>
+    <string name="resize_window_left_edge">Resize window from left edge</string>
+    <string name="resize_window_right_edge">Resize window from right edge</string>
+    <string name="resize_window_bottom_edge">Resize window from bottom edge</string>
+    <string name="increase_window_width">Increase window width</string>
+    <string name="decrease_window_width">Decrease window width</string>
+    <string name="increase_window_height">Increase window height</string>
+    <string name="decrease_window_height">Decrease window height</string>
     <string name="open_start_menu">Open start menu</string>
     <string name="compound_settings">Compound settings</string>
     <string name="device_settings">Device settings</string>
