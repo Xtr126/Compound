@@ -338,8 +338,12 @@ public class RemoteService extends IRemoteService.Stub {
     }
 
     @Override public void showPowerMenu() {
-        try { new ProcessBuilder("input", "keyevent", "--longpress", "POWER").start(); }
-        catch (IOException e) { Log.e(TAG, "Could not show power menu", e); }
+        try { GlobalActionsCompat.show(); }
+        catch (ReflectiveOperationException | RuntimeException e) {
+            Log.e(TAG, "Could not show system power menu", e);
+            throw new IllegalStateException(
+                    "Could not open the system power menu. Check privileged access and device support.", e);
+        }
     }
 
     @Override public void injectInputEvent(InputEvent event, int displayId) {
