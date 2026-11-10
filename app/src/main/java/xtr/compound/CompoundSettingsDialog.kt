@@ -96,6 +96,16 @@ object CompoundSettingsDialog {
         }
         content.addView(scope)
         content.addView(text("When off, Compound shows only its own windows."))
+        val iconsOnly = SwitchMaterial(activity).apply {
+            text = "Show taskbar icons only"
+            contentDescription = "Show taskbar app icons without labels, centered with an indicator below the active task"
+            isChecked = settings.taskbarIconsOnly
+            setOnCheckedChangeListener { _, checked ->
+                settings.taskbarIconsOnly = checked
+                onChanged()
+            }
+        }
+        content.addView(iconsOnly)
         content.addView(text("Background opacity"))
         val opacityValue = text("${settings.opacityPercent}%", "Opacity ${settings.opacityPercent} percent")
         val opacity = slider("Background opacity, percent").apply {

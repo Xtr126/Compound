@@ -42,6 +42,8 @@ class MainActivity : AppCompatActivity() {
     private var setupDialog: AlertDialog? = null
     private var taskErrorShown = false
     private var windowCount = 0
+    private var activeTaskKey: String? = null
+    private var lastFocusedHostedKey: String? = null
     private val missingTasks = mutableMapOf<Int, Int>()
     private val stateListener = RemoteServiceHelper.StateListener { state -> onServiceState(state) }
     private val poll = object : Runnable {
@@ -59,6 +61,11 @@ class MainActivity : AppCompatActivity() {
         onboardingShown = savedInstanceState?.getBoolean("onboardingShown") ?: false
         appearance = AppearanceSettings(this)
         windows = DesktopWindowController(this, binding.appsContainer)
+        windows.setOnFocusedDisplayChanged { displayId ->
+            val key = "display:$displayId"
+            activeTaskKey = key
+            if (::taskbar.isInitialized) taskbar.setActiveEntry(key)
+        }
         windows.setOnWindowsChanged(Runnable {
             val count = windows.getWindows().size
             if (count > windowCount) binding.startMenu.root.visibility = View.INVISIBLE
@@ -70,6 +77,7 @@ class MainActivity : AppCompatActivity() {
         binding.startMenu.appsGrid.adapter = AppsGridAdapter(this, R.layout.app_grid_item, windows)
         taskbar = RunningTasksAdapter(this, ::focusEntry, ::closeEntry)
         binding.taskbar.taskbarApps.adapter = taskbar
+        taskbar.setIconsOnly(appearance.taskbarIconsOnly)
         binding.taskbar.root.visibility = View.VISIBLE
         binding.taskbar.root.setBackgroundColor(Color.TRANSPARENT)
         binding.startMenu.root.setCardBackgroundColor(Color.TRANSPARENT)
@@ -122,10 +130,8 @@ class MainActivity : AppCompatActivity() {
         }
         binding.taskbar.startMenuButton.setOnLongClickListener { showSetup(); true }
         binding.startMenu.settingsButton.setOnClickListener {
-            CompoundSettingsDialog.show(this, appearance, {
-                getSystemService(WindowManager::class.java)?.isCrossWindowBlurEnabled == true
-            }, {
-                applyAppearance(); renderTaskbar(); refreshTasks()
+            CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
+                applyAppearance(); taskbar.setIconsOnly(appearance.taskbarIconsOnly); renderTaskbar(); refreshTasks()
             }, ::showSetup)
         }
         binding.startMenu.settingsButton.setOnClickListener { launchSafely(Intent(Settings.ACTION_SETTINGS)) }
@@ -251,10 +257,22 @@ class MainActivity : AppCompatActivity() {
             entries.add(TaskbarEntry("task:${task.taskId}", task.title.ifBlank { task.packageName }, task.packageName,
                 task.displayId, task.taskId, false))
         }
+        val focusedHostedKey = hosted.lastOrNull { !it.minimized }?.let { "display:${it.displayId}" }
+        if (focusedHostedKey != lastFocusedHostedKey) {
+            lastFocusedHostedKey = focusedHostedKey
+            if (focusedHostedKey != null) activeTaskKey = focusedHostedKey
+            else if (activeTaskKey?.startsWith("display:") == true) activeTaskKey = null
+        }
         taskbar.submit(entries)
+        if (activeTaskKey == null || entries.none { it.key == activeTaskKey }) {
+            activeTaskKey = focusedHostedKey ?: entries.firstOrNull { !it.minimized }?.key
+        }
+        activeTaskKey?.let(taskbar::setActiveEntry)
     }
 
     private fun focusEntry(entry: TaskbarEntry) {
+        activeTaskKey = entry.key
+        taskbar.setActiveEntry(entry.key)
         if (entry.hosted) windows.focusDisplay(entry.displayId)
         else entry.taskId?.let { id -> withService { if (!it.focusTask(id)) error(getString(R.string.task_is_no_longer_available)) } }
         binding.startMenu.root.visibility = View.INVISIBLE

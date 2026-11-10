@@ -19,6 +19,11 @@ class AppearanceSettings(context: Context) {
         get() = preferences.getBoolean(KEY_ALL_TASKS, DEFAULT_ALL_TASKS)
         set(value) { preferences.edit().putBoolean(KEY_ALL_TASKS, value).apply() }
 
+    /** Show only centered app icons in the taskbar. */
+    var taskbarIconsOnly: Boolean
+        get() = preferences.getBoolean(KEY_TASKBAR_ICONS_ONLY, DEFAULT_TASKBAR_ICONS_ONLY)
+        set(value) { preferences.edit().putBoolean(KEY_TASKBAR_ICONS_ONLY, value).apply() }
+
     fun resetAppearance() {
         preferences.edit()
             .putInt(KEY_OPACITY, DEFAULT_OPACITY)
@@ -30,9 +35,11 @@ class AppearanceSettings(context: Context) {
         const val DEFAULT_OPACITY = 80
         const val DEFAULT_BLUR_RADIUS = 25
         const val DEFAULT_ALL_TASKS = false
+        const val DEFAULT_TASKBAR_ICONS_ONLY = false
         private const val PREFS_NAME = "appearance_settings"
         private const val KEY_OPACITY = "opacity_percent"
         private const val KEY_BLUR_RADIUS = "blur_radius_dp"
         private const val KEY_ALL_TASKS = "show_all_tasks"
+        private const val KEY_TASKBAR_ICONS_ONLY = "taskbar_icons_only"
     }
 }

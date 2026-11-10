@@ -14,6 +14,7 @@ For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), op
 
 - Launch apps from the start menu. Drag their title bars, resize from the left or right edge and top or bottom edge, or drag any corner to resize width and height together.
 - Minimize preserves the app session; select its taskbar entry to restore it.
+- Taskbar entries use each app's display name. In Compound settings, enable **Show taskbar icons only** to center icons in the taskbar; the active task has a bar beneath its icon. In icon-only mode, long-press an icon to close that task.
 - Maximize toggles between workspace size and the saved normal bounds.
 - Close removes the hosted task(s) and releases its virtual display. Closing an external task removes that task, without force-stopping its package.
 - The Home button minimizes all Compound windows. Back targets the focused hosted app; Recents refreshes the running-task list.
@@ -45,4 +46,4 @@ Privileged and compositor behavior needs device testing in addition to unit test
 
 For device setup, focused instrumentation runs, log capture, and common failure diagnosis, see the [development guide](docs/development.md).
 
-Window controls show a restore icon while maximized. Taskbar entries show distinct minimized and maximized state icons. Dark-mode changes preserve hosted sessions.
+Window controls show a restore icon while maximized. In task-name mode, taskbar entries show distinct minimized and maximized state icons. Dark-mode changes preserve hosted sessions.
