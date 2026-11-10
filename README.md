@@ -12,7 +12,7 @@ For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), op
 
 ## Desktop controls
 
-- Launch apps from the start menu. Drag their title bars, resize from the left or right edge and top or bottom edge, or drag any corner to resize width and height together.
+- Launch apps from the start menu. Drag their title bars, resize from the left or right edge and top or bottom edge, or drag any corner to resize width and height together. Screen-reader users can focus a resize handle and use its custom actions to change the window by 32 dp.
 - Minimize preserves the app session; select its taskbar entry to restore it.
 - Taskbar entries use each app's display name. In Compound settings, enable **Show taskbar icons only** to center icons in the taskbar; the active task has a bar beneath its icon. In icon-only mode, long-press an icon to close that task.
 - Maximize toggles between workspace size and the saved normal bounds.
