@@ -16,8 +16,9 @@ internal object WindowResizeGeometry {
         parentHeight: Int,
         minSize: Int
     ): Bounds {
-        val left = type == TouchToResizeListener.HORIZONTAL_LEFT || type == TouchToResizeListener.BOTTOM_LEFT
-        val right = type == TouchToResizeListener.HORIZONTAL_RIGHT || type == TouchToResizeListener.BOTTOM_RIGHT
+        val left = type == TouchToResizeListener.HORIZONTAL_LEFT || type == TouchToResizeListener.BOTTOM_LEFT || type == TouchToResizeListener.TOP_LEFT
+        val right = type == TouchToResizeListener.HORIZONTAL_RIGHT || type == TouchToResizeListener.BOTTOM_RIGHT || type == TouchToResizeListener.TOP_RIGHT
+        val top = type == TouchToResizeListener.TOP_LEFT || type == TouchToResizeListener.TOP_RIGHT
         val bottom = type == TouchToResizeListener.VERTICAL || type == TouchToResizeListener.BOTTOM_LEFT || type == TouchToResizeListener.BOTTOM_RIGHT
         val x = startX.toInt()
         val y = startY.toInt()
@@ -35,6 +36,10 @@ internal object WindowResizeGeometry {
         }
         if (bottom) {
             height = (startHeight + dy).coerceIn(minSize, (parentHeight - startY).toInt().coerceAtLeast(minSize))
+        } else if (top) {
+            val fixedBottom = y + startHeight
+            newY = (y + dy).coerceIn(0, (fixedBottom - minSize).coerceAtLeast(0))
+            height = (fixedBottom - newY).coerceAtLeast(minSize)
         }
         return Bounds(newX, newY, width, height)
     }

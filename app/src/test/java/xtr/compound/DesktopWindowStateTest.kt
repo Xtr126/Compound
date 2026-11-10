@@ -22,6 +22,27 @@ class DesktopWindowStateTest {
         assertEquals(WindowResizeGeometry.Bounds(240, 80, 160, 240), bounds)
     }
 
+    @Test fun topRightCornerResizeChangesBothDimensionsAndKeepsBottomEdge() {
+        val bounds = WindowResizeGeometry.resize(
+            TouchToResizeListener.TOP_RIGHT,
+            startX = 100f, startY = 80f, startWidth = 300, startHeight = 200,
+            dx = 100, dy = -30, parentWidth = 800, parentHeight = 600, minSize = 160
+        )
+        assertEquals(WindowResizeGeometry.Bounds(100, 50, 400, 230), bounds)
+        assertEquals(280, bounds.y + bounds.height)
+    }
+
+    @Test fun topLeftCornerResizeKeepsBottomAndRightEdgesAndClampsToMinimum() {
+        val bounds = WindowResizeGeometry.resize(
+            TouchToResizeListener.TOP_LEFT,
+            startX = 100f, startY = 80f, startWidth = 300, startHeight = 200,
+            dx = 250, dy = 300, parentWidth = 800, parentHeight = 600, minSize = 160
+        )
+        assertEquals(WindowResizeGeometry.Bounds(240, 120, 160, 160), bounds)
+        assertEquals(400, bounds.x + bounds.width)
+        assertEquals(280, bounds.y + bounds.height)
+    }
+
     @Test fun minimizeKeepsWindowStateAndRestoreShowsIt() {
         val state = DesktopWindowState(400, 600, 20, 30)
         state.minimize()

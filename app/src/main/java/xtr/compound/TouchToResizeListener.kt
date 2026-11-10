@@ -35,9 +35,13 @@ class TouchToResizeListener(private val window: View, private val type: Int) : V
                 )
                 lp.width = bounds.width
                 lp.height = bounds.height
-                if (type == HORIZONTAL_LEFT || type == BOTTOM_LEFT) {
+                if (type == HORIZONTAL_LEFT || type == BOTTOM_LEFT || type == TOP_LEFT) {
                     lp.leftMargin = bounds.x
                     window.translationX = 0f
+                }
+                if (type == TOP_LEFT || type == TOP_RIGHT) {
+                    lp.topMargin = bounds.y
+                    window.translationY = 0f
                 }
                 window.layoutParams = lp
                 parent.requestLayout()
@@ -55,5 +59,7 @@ class TouchToResizeListener(private val window: View, private val type: Int) : V
         const val VERTICAL = 2
         const val BOTTOM_LEFT = 3
         const val BOTTOM_RIGHT = 4
+        const val TOP_LEFT = 5
+        const val TOP_RIGHT = 6
     }
 }
