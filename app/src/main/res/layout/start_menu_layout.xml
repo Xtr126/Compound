@@ -46,6 +46,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:contentDescription="@string/device_settings"
                 app:icon="@drawable/outline_settings_24"
                 app:iconPadding="0dp"
                 app:iconSize="24dp" />
@@ -56,6 +57,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:contentDescription="@string/compound_settings"
                 app:icon="@drawable/baseline_edit_24"
                 app:iconPadding="0dp"
                 app:iconSize="24dp" />
@@ -66,6 +68,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:contentDescription="@string/open_files"
                 app:icon="@drawable/baseline_folder_open_24"
                 app:iconPadding="0dp"
                 app:iconSize="24dp" />
@@ -76,6 +79,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:contentDescription="@string/power_menu"
                 app:icon="@android:drawable/ic_lock_power_off"
                 app:iconPadding="0dp"
                 app:iconSize="24dp" />

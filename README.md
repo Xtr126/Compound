@@ -1,16 +1,18 @@
 # Compound
+Compound is a sleek modern desktop for Android with custom app window decorations and window management.
+![image](https://github.com/user-attachments/assets/25c09157-7c6d-4b46-8c8e-b2957bed84cf)
 
-Compound is an Android desktop that hosts apps on virtual displays, with draggable/resizable windows and a running-app taskbar. Android 12 (API 31) or newer is required.
+It hosts apps on virtual displays, with draggable/resizable windows and a running-app taskbar. Android 12 (API 31) or newer is required.
 
 ## Setup
 
-Install the debug APK from the **Android build** GitHub Actions artifact, or build it locally. Compound uses its system-app service when installed with the necessary platform privileges; otherwise it tries root first, then Shizuku.
+Install the APK from the latest GitHub Release, or download the debug APK from a pull request's **Android build** GitHub Actions artifact. You can also build it locally. Compound uses its system-app service when installed with the necessary platform privileges; otherwise it tries root first, then Shizuku.
 
 For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), open it, and follow its wireless-debugging startup instructions. Open Compound, choose **Grant access**, and accept Shizuku's permission dialog. Non-root Shizuku normally needs restarting after a device reboot. Setup explains missing permissions or connection errors and offers retry. Open it again from Compound settings or by holding the start-menu button.
 
 ## Desktop controls
 
-- Launch apps from the start menu. Drag their title bars and resize from the edges.
+- Launch apps from the start menu. Drag their title bars, resize from the left or right edge and top or bottom edge, or drag any corner to resize width and height together.
 - Minimize preserves the app session; select its taskbar entry to restore it.
 - Taskbar entries use each app's display name. In Compound settings, enable **Show taskbar icons only** to center icons in the taskbar; the active task has a bar beneath its icon. In icon-only mode, long-press an icon to close that task.
 - Maximize toggles between workspace size and the saved normal bounds.
@@ -38,7 +40,7 @@ Use JDK 21 and an Android SDK with `platforms;android-37.0` and build tools 36.0
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-The APK is written to `app/build/outputs/apk/debug/`. GitHub Actions runs these checks on pull requests and pushes to `main`, validates the Gradle wrapper, caches Gradle dependencies, and uploads the APK and diagnostic reports. No signing secrets are needed for the debug build.
+The APK is written to `app/build/outputs/apk/debug/`. GitHub Actions runs these checks on pull requests, validates the Gradle wrapper, caches Gradle dependencies, and uploads the APK and diagnostic reports. Pushing a `v*` tag (for example, `v1.1`) runs the same checks and publishes a GitHub Release with the debug-signed APK and generated release notes. Update `versionName` and `versionCode` in `app/build.gradle.kts` before tagging a new app version. No signing secrets are needed for the debug build.
 
 Privileged and compositor behavior needs device testing in addition to unit tests. See [the validation checklist](docs/validation.md) for coverage and reproduction steps.
 
