@@ -70,6 +70,10 @@ object CompoundSettingsDialog {
         val content = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(activity.getColor(R.color.settingsDialogControlsSurface))
+                cornerRadius = 16 * density
+            }
         }
         fun text(label: String, description: String? = null) = TextView(activity).apply {
             text = label
@@ -179,12 +183,6 @@ object CompoundSettingsDialog {
                 scaleType = android.widget.ImageView.ScaleType.FIT_XY
             }
             panel.addView(background, 0, android.widget.FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-            val surfaceScrim = View(activity).apply {
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                setBackgroundColor(activity.getColor(R.color.settingsDialogScrim))
-            }
-            panel.addView(surfaceScrim, 1, android.widget.FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
             val legacy = LegacyBackgroundBlur(background, panel, activity.window, hideOverlay = false)
             dialogBlur = LiveBackgroundBlur(background, 28f, legacy).also { helper ->

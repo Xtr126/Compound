@@ -12,5 +12,5 @@
     <color name="compoundSurface">#FFF7F8FC</color>
     <color name="compoundOnSurface">#FF191B20</color>
     <color name="compoundOnSurfaceVariant">#FF454750</color>
-    <color name="settingsDialogScrim">#DDF7F8FC</color>
+    <color name="settingsDialogControlsSurface">#66F7F8FC</color>
 </resources>

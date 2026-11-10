@@ -5,5 +5,5 @@
     <color name="compoundSurface">#FF181A20</color>
     <color name="compoundOnSurface">#FFE4E4E9</color>
     <color name="compoundOnSurfaceVariant">#FFC5C7D0</color>
-    <color name="settingsDialogScrim">#DD181A20</color>
+    <color name="settingsDialogControlsSurface">#66181A20</color>
 </resources>
