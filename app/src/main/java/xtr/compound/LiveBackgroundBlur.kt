@@ -1,6 +1,5 @@
 package xtr.compound
 
-import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
