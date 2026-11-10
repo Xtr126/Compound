@@ -19,7 +19,9 @@ import java.util.function.Consumer
 class LiveBackgroundBlur(
     private val view: View,
     private val cornerRadiusDp: Float = 0f,
-    private val legacy: LegacyBackgroundBlur? = null
+    private val legacy: LegacyBackgroundBlur? = null,
+    /** Live cross-window blur only works when this view overlays a distinct window. */
+    private val allowLiveBlur: Boolean = true
 ) : AutoCloseable {
     private val windowManager = view.context.getSystemService(WindowManager::class.java)
     private val density = view.resources.displayMetrics.density
@@ -45,8 +47,12 @@ class LiveBackgroundBlur(
 
     private val attachListener = object : OnAttachStateChangeListener {
         override fun onViewAttachedToWindow(v: View) {
-            registerBlurListener()
-            createDrawableIfNeeded()
+            if (allowLiveBlur) {
+                registerBlurListener()
+                createDrawableIfNeeded()
+            } else {
+                installFallback()
+            }
             updateAvailability()
         }
 
@@ -63,7 +69,7 @@ class LiveBackgroundBlur(
     init {
         if (Build.VERSION.SDK_INT >= 31) {
             view.addOnAttachStateChangeListener(attachListener)
-            if (view.isAttachedToWindow) {
+            if (allowLiveBlur && view.isAttachedToWindow) {
                 registerBlurListener()
                 createDrawableIfNeeded()
             } else {
@@ -128,7 +134,7 @@ class LiveBackgroundBlur(
     }
 
     private fun createDrawableIfNeeded() {
-        if (closed || blurDrawable != null || Build.VERSION.SDK_INT < 31) return
+        if (!allowLiveBlur || closed || blurDrawable != null || Build.VERSION.SDK_INT < 31) return
         try {
             // The app targets a recent SDK, so these hidden members are blocked on stock builds
             // unless explicitly exempted. Keep the exemptions restricted to the three API classes

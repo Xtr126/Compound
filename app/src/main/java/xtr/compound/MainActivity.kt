@@ -8,6 +8,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowManager
 import android.view.WindowInsets
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -61,6 +62,7 @@ class MainActivity : AppCompatActivity() {
             if (count > windowCount) binding.startMenu.root.visibility = View.INVISIBLE
             windowCount = count
             renderTaskbar(); refreshTasks()
+            if (::legacyTaskbarBlur.isInitialized) legacyTaskbarBlur.refresh()
         })
         binding.startMenu.appsList.adapter = AppsGridAdapter(this, R.layout.app_list_item, windows)
         binding.startMenu.appsGrid.adapter = AppsGridAdapter(this, R.layout.app_grid_item, windows)
@@ -71,8 +73,12 @@ class MainActivity : AppCompatActivity() {
         binding.startMenu.root.setCardBackgroundColor(Color.TRANSPARENT)
         legacyTaskbarBlur = LegacyBackgroundBlur(binding.taskbarBackground, binding.taskbar.root, window)
         legacyMenuBlur = LegacyBackgroundBlur(binding.startMenu.background, binding.startMenu.root, window)
-        taskbarBlur = LiveBackgroundBlur(binding.taskbarBackground, legacy = legacyTaskbarBlur)
-        menuBlur = LiveBackgroundBlur(binding.startMenu.background, 40f, legacyMenuBlur)
+        // These surfaces are views in this Activity window, so a cross-window blur drawable has no
+        // separate underlying window to sample. PixelCopy+RenderEffect captures the hosted desktop.
+        taskbarBlur = LiveBackgroundBlur(
+            binding.taskbarBackground, legacy = legacyTaskbarBlur, allowLiveBlur = false)
+        menuBlur = LiveBackgroundBlur(
+            binding.startMenu.background, 40f, legacyMenuBlur, allowLiveBlur = false)
         binding.taskbarBackground.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacyTaskbarBlur.refresh()
         }
@@ -116,7 +122,9 @@ class MainActivity : AppCompatActivity() {
         binding.taskbar.startMenuButton.setOnLongClickListener { showSetup(); true }
         binding.startMenu.settingsButton.contentDescription = "Compound settings"
         binding.startMenu.settingsButton.setOnClickListener {
-            CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
+            CompoundSettingsDialog.show(this, appearance, {
+                getSystemService(WindowManager::class.java)?.isCrossWindowBlurEnabled == true
+            }, {
                 applyAppearance(); renderTaskbar(); refreshTasks()
             }, ::showSetup)
         }

@@ -3,6 +3,7 @@ package xtr.compound
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
 import android.view.View
@@ -130,6 +131,7 @@ class DesktopIntegrationTest {
     /** Background redraws must not repeatedly hide the taskbar or an open start menu. */
     @Test fun desktopControlsRemainVisibleAfterFallbackLayout() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            val expectedSnapshotColor = Color.rgb(210, 35, 50)
             scenario.onActivity { activity ->
                 activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
@@ -138,8 +140,12 @@ class DesktopIntegrationTest {
             var taskbarSnapshot: android.graphics.drawable.Drawable? = null
             scenario.onActivity { activity ->
                 assertEquals(1f, activity.findViewById<View>(R.id.taskbar).alpha, 0f)
+                (activity.findViewById<View>(R.id.appsContainer).parent as View)
+                    .setBackgroundColor(expectedSnapshotColor)
+                val taskbarHelperField = MainActivity::class.java.getDeclaredField("legacyTaskbarBlur")
+                    .apply { isAccessible = true }
+                (taskbarHelperField.get(activity) as LegacyBackgroundBlur).refresh()
                 val background = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
-                taskbarSnapshot = background.drawable
                 repeat(4) { background.requestLayout() }
                 activity.findViewById<View>(R.id.startMenuButton).performClick()
             }
@@ -147,12 +153,25 @@ class DesktopIntegrationTest {
             scenario.onActivity { activity ->
                 val taskbar = activity.findViewById<View>(R.id.taskbar)
                 val menu = activity.findViewById<View>(R.id.startMenu)
+                val taskbarBackground = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
+                taskbarSnapshot = taskbarBackground.drawable
                 assertEquals(View.VISIBLE, taskbar.visibility)
                 assertEquals(1f, taskbar.alpha, 0f)
                 assertEquals(View.VISIBLE, menu.visibility)
                 assertEquals(1f, menu.alpha, 0f)
+                assertTrue("Taskbar should snapshot the Activity window behind its in-window surface",
+                    taskbarSnapshot is android.graphics.drawable.BitmapDrawable)
+                assertEquals(expectedSnapshotColor,
+                    (taskbarSnapshot as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
+                        taskbarBackground.width / 2, taskbarBackground.height / 2))
+                val menuBackground = activity.findViewById<android.widget.ImageView>(R.id.background)
+                assertTrue("Start menu should snapshot the Activity window behind its in-window surface",
+                    menuBackground.drawable is android.graphics.drawable.BitmapDrawable)
+                assertEquals(expectedSnapshotColor,
+                    (menuBackground.drawable as android.graphics.drawable.BitmapDrawable).bitmap.getPixel(
+                        menuBackground.width / 2, menuBackground.height / 2))
                 assertSame("Unchanged bounds must not recapture the taskbar", taskbarSnapshot,
-                    activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground).drawable)
+                    taskbarBackground.drawable)
                 menu.requestLayout()
             }
             Thread.sleep(600)
