@@ -8,7 +8,7 @@ Use JDK 21, the checked-in Gradle wrapper, Android SDK platform `platforms;andro
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assembleDebugAndroidTest
 ```
 
-Debug APKs are under `app/build/outputs/apk/debug/` and `app/build/outputs/apk/androidTest/debug/`. Unit-test reports are under `app/build/reports/tests/testDebugUnitTest/`; lint is `app/build/reports/lint-results-debug.html`. The GitHub Actions workflow builds, tests, lints and uploads APK/reports; it does not run privileged device instrumentation.
+Debug APKs are under `app/build/outputs/apk/debug/` and `app/build/outputs/apk/androidTest/debug/`. Unit-test reports are under `app/build/reports/tests/testDebugUnitTest/`; lint is `app/build/reports/lint-results-debug.html`. The pull request GitHub Actions workflow builds, tests, lints and uploads APK/reports; it does not run privileged device instrumentation. Pushing a `v*` tag runs the same checks and publishes the debug-signed APK as a GitHub Release asset.
 
 The Gradle daemon requests Java 21 through `gradle/gradle-daemon-jvm.properties`. Keep the wrapper checksum pinned. A successful incremental build is useful, but use a clean build when diagnosing stale generated AIDL/binding classes.
 

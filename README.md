@@ -4,7 +4,7 @@ Compound is an Android desktop that hosts apps on virtual displays, with draggab
 
 ## Setup
 
-Install the debug APK from the **Android build** GitHub Actions artifact, or build it locally. Compound uses its system-app service when installed with the necessary platform privileges; otherwise it tries root first, then Shizuku.
+Install the APK from the latest GitHub Release, or download the debug APK from a pull request's **Android build** GitHub Actions artifact. You can also build it locally. Compound uses its system-app service when installed with the necessary platform privileges; otherwise it tries root first, then Shizuku.
 
 For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), open it, and follow its wireless-debugging startup instructions. Open Compound, choose **Grant access**, and accept Shizuku's permission dialog. Non-root Shizuku normally needs restarting after a device reboot. Setup explains missing permissions or connection errors and offers retry. Open it again from Compound settings or by holding the start-menu button.
 
@@ -37,7 +37,7 @@ Use JDK 21 and an Android SDK with `platforms;android-37.0` and build tools 36.0
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-The APK is written to `app/build/outputs/apk/debug/`. GitHub Actions runs these checks on pull requests and pushes to `main`, validates the Gradle wrapper, caches Gradle dependencies, and uploads the APK and diagnostic reports. No signing secrets are needed for the debug build.
+The APK is written to `app/build/outputs/apk/debug/`. GitHub Actions runs these checks on pull requests, validates the Gradle wrapper, caches Gradle dependencies, and uploads the APK and diagnostic reports. Pushing a `v*` tag (for example, `v1.1`) runs the same checks and publishes a GitHub Release with the debug-signed APK and generated release notes. Update `versionName` and `versionCode` in `app/build.gradle.kts` before tagging a new app version. No signing secrets are needed for the debug build.
 
 Privileged and compositor behavior needs device testing in addition to unit tests. See [the validation checklist](docs/validation.md) for coverage and reproduction steps.
 
