@@ -12,6 +12,7 @@
 
     <style name="Theme.Compound.Fullscreen" parent="Theme.Compound">
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
     </style>
 
 </resources>

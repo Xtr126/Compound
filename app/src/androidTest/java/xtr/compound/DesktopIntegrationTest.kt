@@ -9,6 +9,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.LayerDrawable
 import android.view.View
+import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
 import androidx.activity.ComponentActivity
@@ -64,6 +65,7 @@ class DesktopIntegrationTest {
             assertEquals(25, settings.blurRadiusDp)
             assertFalse(settings.showAllTasks)
             assertFalse(settings.taskbarIconsOnly)
+            assertFalse(settings.useSystemWallpaper)
             assertFalse(settings.startMenuResizeEnabled)
             assertEquals(AppearanceSettings.DEFAULT_START_MENU_WIDTH_DP, settings.startMenuWidthDp)
             assertEquals(AppearanceSettings.DEFAULT_START_MENU_HEIGHT_DP, settings.startMenuHeightDp)
@@ -73,6 +75,7 @@ class DesktopIntegrationTest {
             settings.blurRadiusDp = 120
             settings.showAllTasks = true
             settings.taskbarIconsOnly = true
+            settings.useSystemWallpaper = true
             settings.startMenuResizeEnabled = true
             settings.startMenuWidthDp = 900
             settings.startMenuHeightDp = 700
@@ -81,6 +84,7 @@ class DesktopIntegrationTest {
             assertEquals(100, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue(reopened.taskbarIconsOnly)
+            assertTrue(reopened.useSystemWallpaper)
             assertTrue(reopened.startMenuResizeEnabled)
             assertEquals(900, reopened.startMenuWidthDp)
             assertEquals(700, reopened.startMenuHeightDp)
@@ -93,6 +97,7 @@ class DesktopIntegrationTest {
             assertEquals(25, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue("Reset appearance must preserve taskbar presentation", reopened.taskbarIconsOnly)
+            assertFalse("Reset appearance restores the bundled wallpaper", reopened.useSystemWallpaper)
             assertFalse("Reset must disable the resize affordance", reopened.startMenuResizeEnabled)
             assertEquals(AppearanceSettings.DEFAULT_START_MENU_WIDTH_DP, reopened.startMenuWidthDp)
             assertEquals(AppearanceSettings.DEFAULT_START_MENU_HEIGHT_DP, reopened.startMenuHeightDp)
@@ -174,8 +179,10 @@ class DesktopIntegrationTest {
         val oldOpacity = settings.opacityPercent
         val oldBlur = settings.blurRadiusDp
         val oldScope = settings.showAllTasks
+        val oldSystemWallpaper = settings.useSystemWallpaper
         try {
             settings.showAllTasks = true
+            settings.useSystemWallpaper = false
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 scenario.onActivity { activity ->
                     activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -183,6 +190,23 @@ class DesktopIntegrationTest {
                 clickDesktopControl(R.string.open_start_menu)
                 clickDesktopControl(R.string.appearance_settings)
                 composeRule.onNode(hasText("Show all Android tasks")).assertDoesNotExist()
+                composeRule.onNode(hasText("Use system wallpaper")).performClick()
+                assertTrue(settings.useSystemWallpaper)
+                scenario.onActivity { activity ->
+                    assertTrue(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER != 0)
+                    val desktopRoot = activity.findViewById<View>(R.id.appsContainer).parent as View
+                    val background = desktopRoot.background as? android.graphics.drawable.ColorDrawable
+                    assertNotNull("System wallpaper mode should leave the Activity surface transparent", background)
+                    assertEquals(Color.TRANSPARENT, background!!.color)
+                }
+                composeRule.onNode(hasText("Use system wallpaper")).performClick()
+                assertFalse(settings.useSystemWallpaper)
+                scenario.onActivity { activity ->
+                    assertEquals(0, activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+                    val desktopRoot = activity.findViewById<View>(R.id.appsContainer).parent as View
+                    assertFalse("Bundled wallpaper should be restored when disabled",
+                        desktopRoot.background is android.graphics.drawable.ColorDrawable)
+                }
                 val opacity = composeRule.onNode(hasContentDescription("Background opacity, percent"))
                 val blur = composeRule.onNode(hasContentDescription("Background blur radius, dp"))
                 for (percent in listOf(100, 0)) {
@@ -215,6 +239,7 @@ class DesktopIntegrationTest {
             settings.opacityPercent = oldOpacity
             settings.blurRadiusDp = oldBlur
             settings.showAllTasks = oldScope
+            settings.useSystemWallpaper = oldSystemWallpaper
         }
     }
 

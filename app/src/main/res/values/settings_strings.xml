@@ -9,6 +9,8 @@
     <string name="background_blur_radius_semantics">Background blur radius, dp</string>
     <string name="blur_dp_value">%1$d dp</string>
     <string name="blur_dp_description">Background blur %1$d dp</string>
+    <string name="use_system_wallpaper">Use system wallpaper</string>
+    <string name="use_system_wallpaper_description">Use Android’s current wallpaper behind the desktop. Falls back to Compound’s wallpaper if unavailable.</string>
     <string name="live_blur_unavailable">Live blur is unavailable for this dialog. Its background refreshes when opened.</string>
     <string name="show_all_android_tasks">Show all Android tasks</string>
     <string name="show_all_android_tasks_description">Show all Android tasks. Off applies the taskbar only to Compound.</string>

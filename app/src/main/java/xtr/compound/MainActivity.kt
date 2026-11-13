@@ -2,8 +2,10 @@ package xtr.compound
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -56,6 +58,13 @@ class MainActivity : AppCompatActivity() {
     private var startMenuPowerEnabled by mutableStateOf(false)
     private lateinit var startMenuResizeHandle: ImageView
     private var windowCount = 0
+    private var wallpaperReceiverRegistered = false
+    private var appliedSystemWallpaper: Boolean? = null
+    private val wallpaperChangedReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: Intent?) {
+            applyDesktopWallpaper(forceRefresh = true)
+        }
+    }
     private var activeTaskKey by mutableStateOf<String?>(null)
     private var lastFocusedHostedKey: String? = null
     private val missingTasks = mutableMapOf<Int, Int>()
@@ -192,12 +201,53 @@ class MainActivity : AppCompatActivity() {
     private fun applyAppearance() {
         taskbarBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
         menuBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
+        applyDesktopWallpaper()
         launcherDensityMultiplier = appearance.launcherDensityMultiplier
         if (::windows.isInitialized) windows.setAppWindowDensityMultiplier(appearance.appWindowDensityMultiplier)
         if (::startMenuResizeHandle.isInitialized) {
             startMenuResizeHandle.visibility = if (appearance.startMenuResizeEnabled) View.VISIBLE else View.GONE
         }
         applyLauncherHostDensity()
+    }
+
+    private fun applyDesktopWallpaper(forceRefresh: Boolean = false) {
+        val useSystemWallpaper = appearance.useSystemWallpaper
+        if (!forceRefresh && appliedSystemWallpaper == useSystemWallpaper) return
+
+        if (useSystemWallpaper) {
+            binding.root.setBackgroundColor(Color.TRANSPARENT)
+            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val attributes = window.attributes
+                attributes.setWallpaperTouchEventsEnabled(false)
+                window.attributes = attributes
+            }
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+            binding.root.setBackgroundResource(R.drawable.wallpaper)
+        }
+        appliedSystemWallpaper = useSystemWallpaper
+        refreshWallpaperSnapshots()
+    }
+
+    private fun refreshWallpaperSnapshots() {
+        if (::legacyTaskbarBlur.isInitialized) legacyTaskbarBlur.refresh()
+        if (::legacyMenuBlur.isInitialized && binding.startMenu.visibility == View.VISIBLE) {
+            legacyMenuBlur.refresh()
+        }
+    }
+
+    @Suppress("DEPRECATION") // Android continues to broadcast this action when wallpaper changes.
+    private fun registerWallpaperReceiver() {
+        if (wallpaperReceiverRegistered) return
+        val filter = IntentFilter(Intent.ACTION_WALLPAPER_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(wallpaperChangedReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            registerReceiver(wallpaperChangedReceiver, filter)
+        }
+        wallpaperReceiverRegistered = true
     }
 
     private fun createStartMenuResizeHandle() {
@@ -347,7 +397,23 @@ class MainActivity : AppCompatActivity() {
         } else if (params.bottomToTop != oldBottomToTop || params.bottomToBottom != oldBottomToBottom) {
             binding.startMenu.layoutParams = params
         }
+        applyStartMenuSize()
     }
+
+    private fun applyStartMenuSize() {
+        if (binding.root.width <= 0 || binding.appsContainer.height <= 0) return
+        val density = effectiveLauncherDensity()
+        val bounds = startMenuResizeBounds()
+        val width = (appearance.startMenuWidthDp * density).toInt().coerceAtMost(bounds.first)
+        val height = (appearance.startMenuHeightDp * density).toInt().coerceAtMost(bounds.second)
+        val params = binding.startMenu.layoutParams
+        if (params.width != width || params.height != height) {
+            params.width = width
+            params.height = height
+            binding.startMenu.layoutParams = params
+        }
+    }
+
 
     private fun effectiveLauncherDensity(): Float = resources.displayMetrics.density *
         AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
@@ -490,13 +556,23 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        registerWallpaperReceiver()
+        applyDesktopWallpaper(forceRefresh = true)
         resumed = true
         supportActionBar?.hide()
         binding.root.windowInsetsController?.hide(WindowInsets.Type.systemBars())
         handler.removeCallbacks(poll); handler.post(poll)
         RemoteServiceHelper.initialize(applicationContext)
     }
-    override fun onPause() { resumed = false; handler.removeCallbacks(poll); super.onPause() }
+    override fun onPause() {
+        resumed = false
+        handler.removeCallbacks(poll)
+        if (wallpaperReceiverRegistered) {
+            unregisterReceiver(wallpaperChangedReceiver)
+            wallpaperReceiverRegistered = false
+        }
+        super.onPause()
+    }
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         if (!destroyed && ::taskbarBlur.isInitialized) {
