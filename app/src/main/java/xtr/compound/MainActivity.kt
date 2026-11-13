@@ -287,7 +287,13 @@ class MainActivity : AppCompatActivity() {
         val density = effectiveLauncherDensity()
         val taskbarParams = binding.taskbar.layoutParams
         if (taskbarParams != null) {
-            val height = (60 * density).toInt().coerceAtLeast(1)
+            val baseDensity = resources.displayMetrics.density
+            val height = LauncherMenuGeometry.capTaskbarHeight(
+                requestedHeightPx = (60 * density).toInt(),
+                rootHeightPx = binding.root.height,
+                fallbackRootHeightPx = resources.displayMetrics.heightPixels,
+                baseDensity = baseDensity
+            )
             if (taskbarParams.height != height) {
                 taskbarParams.height = height
                 binding.taskbar.layoutParams = taskbarParams
@@ -309,8 +315,10 @@ class MainActivity : AppCompatActivity() {
         val scale = AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
         val horizontalMargin = (20 * density).toInt()
         val width = minOf((appearance.startMenuWidthDp * density).toInt(), (rootWidth - horizontalMargin).coerceAtLeast(1))
+        val rootHeight = binding.root.height.takeIf { it > 0 }
+            ?: resources.displayMetrics.heightPixels.coerceAtLeast(1)
         val menuBounds = LauncherMenuGeometry.calculate(
-            rootHeightPx = binding.root.height,
+            rootHeightPx = rootHeight,
             workspaceHeightPx = workspaceHeight,
             baseDensity = baseDensity,
             densityScale = scale,
