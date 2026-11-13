@@ -42,6 +42,7 @@ class DesktopWindowController(
     private val records = mutableListOf<Record>()
     private var windowsChanged: Runnable? = null
     private var focusedDisplayChanged: ((Int) -> Unit)? = null
+    @Volatile private var appWindowDensityMultiplier = AppearanceSettings.DEFAULT_DENSITY_MULTIPLIER
     @Volatile private var shutDown = false
 
     init {
@@ -62,6 +63,15 @@ class DesktopWindowController(
     }
 
     fun setOnWindowsChanged(listener: Runnable?) { windowsChanged = listener }
+
+    /** Applies the Configure density multiplier to all hosted and subsequently launched apps. */
+    @MainThread
+    fun setAppWindowDensityMultiplier(multiplier: Float) {
+        val quantized = AppearanceSettings.quantizeDensityMultiplier(multiplier)
+        if (appWindowDensityMultiplier == quantized) return
+        appWindowDensityMultiplier = quantized
+        records.filterNot { it.closed }.forEach { it.helper?.setDensityMultiplier(quantized) }
+    }
 
     /** Reports every explicit hosted-window focus, including touches on the current top window. */
     fun setOnFocusedDisplayChanged(listener: ((Int) -> Unit)?) { focusedDisplayChanged = listener }
@@ -170,11 +180,12 @@ class DesktopWindowController(
                 if (shutDown || record.closed) return
                 val width = record.binding.surfaceView.width
                 val height = record.binding.surfaceView.height
+                val densityMultiplier = appWindowDensityMultiplier
                 try { worker.execute {
                     val helper = runCatching {
                         VirtualDisplayHelper.create(
                             service, width, height,
-                            surface, record.intent, worker
+                            surface, record.intent, worker, densityMultiplier
                         )
                     }.onFailure { Log.e("CompoundWindows", "Could not launch ${record.entry.packageName}", it) }.getOrNull()
                     if (record.closed) {
@@ -194,6 +205,7 @@ class DesktopWindowController(
                             return@post
                         }
                         record.helper = helper
+                        helper.setDensityMultiplier(appWindowDensityMultiplier)
                         val currentSurface = record.surface
                         if (record.entry.minimized || currentSurface == null || !currentSurface.isValid) helper.detachSurface()
                         else if (currentSurface !== surface) helper.attachSurface(currentSurface)

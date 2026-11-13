@@ -4,6 +4,79 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DesktopWindowStateTest {
+    @Test fun densityMultiplierUsesBaseDpiAndClampsToSupportedRange() {
+        assertEquals(420, DisplayDensity.dpi(420, 1.0f))
+        assertEquals(42, DisplayDensity.dpi(420, 0.1f))
+        assertEquals(1680, DisplayDensity.dpi(420, 4.0f))
+        assertEquals(1, DisplayDensity.dpi(0, 0.1f))
+        assertEquals(1680, DisplayDensity.dpi(420, 10f))
+    }
+
+    @Test fun densityMultipliersAreQuantizedToTenths() {
+        assertEquals(1.0f, AppearanceSettings.quantizeDensityMultiplier(1.04f), 0f)
+        assertEquals(1.1f, AppearanceSettings.quantizeDensityMultiplier(1.06f), 0f)
+        assertEquals(0.1f, AppearanceSettings.quantizeDensityMultiplier(0f), 0f)
+        assertEquals(4.0f, AppearanceSettings.quantizeDensityMultiplier(8f), 0f)
+    }
+
+    @Test fun taskbarDensityIsCappedToPreserveMinimumWorkspace() {
+        assertEquals(240, LauncherMenuGeometry.capTaskbarHeight(
+            requestedHeightPx = 240,
+            rootHeightPx = 800,
+            fallbackRootHeightPx = 600,
+            baseDensity = 1f
+        ))
+        assertEquals(20, LauncherMenuGeometry.capTaskbarHeight(
+            requestedHeightPx = 240,
+            rootHeightPx = 300,
+            fallbackRootHeightPx = 600,
+            baseDensity = 1f
+        ))
+    }
+
+    @Test fun taskbarHeightUsesMeasuredFallbackAndNeverBecomesInvalid() {
+        assertEquals(240, LauncherMenuGeometry.capTaskbarHeight(
+            requestedHeightPx = 240,
+            rootHeightPx = 0,
+            fallbackRootHeightPx = 600,
+            baseDensity = 1f
+        ))
+        assertEquals(1, LauncherMenuGeometry.capTaskbarHeight(
+            requestedHeightPx = 0,
+            rootHeightPx = 0,
+            fallbackRootHeightPx = 0,
+            baseDensity = 1f
+        ))
+    }
+
+    @Test fun largeLauncherDensityLetsStartMenuOverlapTaskbarToKeepRoomForControls() {
+        val bounds = LauncherMenuGeometry.calculate(
+            rootHeightPx = 360,
+            workspaceHeightPx = 120,
+            baseDensity = 1f,
+            densityScale = 4f,
+            requestedHeightDp = 580
+        )
+
+        assertTrue(bounds.overlapsTaskbar)
+        assertEquals(350, bounds.heightPx)
+        assertEquals(10, bounds.bottomMarginPx)
+    }
+
+    @Test fun normalLauncherDensityKeepsStartMenuAboveTaskbar() {
+        val bounds = LauncherMenuGeometry.calculate(
+            rootHeightPx = 800,
+            workspaceHeightPx = 740,
+            baseDensity = 1f,
+            densityScale = 1f,
+            requestedHeightDp = 580
+        )
+
+        assertFalse(bounds.overlapsTaskbar)
+        assertEquals(580, bounds.heightPx)
+        assertEquals(10, bounds.bottomMarginPx)
+    }
+
     @Test fun bottomRightCornerResizeChangesBothDimensionsWithinDesktop() {
         val bounds = WindowResizeGeometry.resize(
             TouchToResizeListener.BOTTOM_RIGHT,

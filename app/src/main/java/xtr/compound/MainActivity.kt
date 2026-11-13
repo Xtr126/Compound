@@ -17,8 +17,10 @@ import android.widget.ImageView
 import android.widget.FrameLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.net.toUri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -39,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuBlur: LiveBackgroundBlur
     private var taskbarEntries by mutableStateOf(emptyList<TaskbarEntry>())
     private var taskbarIconsOnly by mutableStateOf(false)
+    private var launcherDensityMultiplier by mutableFloatStateOf(AppearanceSettings.DEFAULT_DENSITY_MULTIPLIER)
     private var taskbarServiceStatus by mutableStateOf<String?>(null)
     private val handler = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor()
@@ -71,7 +74,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         onboardingShown = savedInstanceState?.getBoolean("onboardingShown") ?: false
         appearance = AppearanceSettings(this)
+        launcherDensityMultiplier = appearance.launcherDensityMultiplier
         windows = DesktopWindowController(this, binding.appsContainer)
+        windows.setAppWindowDensityMultiplier(appearance.appWindowDensityMultiplier)
         windows.setOnFocusedDisplayChanged { displayId ->
             val key = "display:$displayId"
             activeTaskKey = key
@@ -103,10 +108,10 @@ class MainActivity : AppCompatActivity() {
         createStartMenuResizeHandle()
         applyAppearance()
         binding.appsContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            applyStartMenuSize()
+            applyLauncherHostDensity()
         }
         binding.taskbar.setContent {
-            DesktopTheme {
+            DesktopTheme(launcherDensityMultiplier) {
                 TaskbarContent(
                     entries = taskbarEntries,
                     iconsOnly = taskbarIconsOnly,
@@ -137,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         binding.startMenuContent.setContent {
-            DesktopTheme {
+            DesktopTheme(launcherDensityMultiplier) {
                 StartMenuContent(
                     windows = windows,
                     powerEnabled = startMenuPowerEnabled,
@@ -187,14 +192,16 @@ class MainActivity : AppCompatActivity() {
     private fun applyAppearance() {
         taskbarBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
         menuBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
+        launcherDensityMultiplier = appearance.launcherDensityMultiplier
+        if (::windows.isInitialized) windows.setAppWindowDensityMultiplier(appearance.appWindowDensityMultiplier)
         if (::startMenuResizeHandle.isInitialized) {
             startMenuResizeHandle.visibility = if (appearance.startMenuResizeEnabled) View.VISIBLE else View.GONE
-            applyStartMenuSize()
         }
+        applyLauncherHostDensity()
     }
 
     private fun createStartMenuResizeHandle() {
-        val density = resources.displayMetrics.density
+        val density = effectiveLauncherDensity()
         startMenuResizeHandle = ImageView(this).apply {
             setImageResource(R.drawable.outline_resize_window_24)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
@@ -225,6 +232,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     android.view.MotionEvent.ACTION_MOVE -> {
                         val start = view.getTag(R.id.startMenuResizeGesture) as? IntArray ?: return@setOnTouchListener true
+                        val density = effectiveLauncherDensity()
                         val bounds = startMenuResizeBounds()
                         val size = StartMenuResizeGeometry.resize(
                             initialWidth = start[0], initialHeight = start[1],
@@ -257,26 +265,92 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startMenuResizeBounds(): Pair<Int, Int> {
-        val density = resources.displayMetrics.density
+        val density = effectiveLauncherDensity()
+        val baseDensity = resources.displayMetrics.density
+        val scale = AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
+        val maxMenuHeight = LauncherMenuGeometry.calculate(
+            rootHeightPx = binding.root.height,
+            workspaceHeightPx = binding.appsContainer.height,
+            baseDensity = baseDensity,
+            densityScale = scale,
+            requestedHeightDp = AppearanceSettings.MAX_START_MENU_SIZE_DP
+        ).heightPx
         return Pair(
             (binding.root.width - 20 * density).toInt().coerceAtLeast(1),
-            (binding.appsContainer.height - 20 * density).toInt().coerceAtLeast(1)
+            maxMenuHeight
         )
     }
 
-    private fun applyStartMenuSize() {
-        if (binding.root.width <= 0 || binding.appsContainer.height <= 0) return
-        val density = resources.displayMetrics.density
-        val bounds = startMenuResizeBounds()
-        val width = (appearance.startMenuWidthDp * density).toInt().coerceAtMost(bounds.first)
-        val height = (appearance.startMenuHeightDp * density).toInt().coerceAtMost(bounds.second)
-        val params = binding.startMenu.layoutParams
-        if (params.width != width || params.height != height) {
+    /** Applies local launcher density to Compose and the pixel-sized Android containers. */
+    private fun applyLauncherHostDensity() {
+        if (!::binding.isInitialized) return
+        val density = effectiveLauncherDensity()
+        val taskbarParams = binding.taskbar.layoutParams
+        if (taskbarParams != null) {
+            val baseDensity = resources.displayMetrics.density
+            val height = LauncherMenuGeometry.capTaskbarHeight(
+                requestedHeightPx = (60 * density).toInt(),
+                rootHeightPx = binding.root.height,
+                fallbackRootHeightPx = resources.displayMetrics.heightPixels,
+                baseDensity = baseDensity
+            )
+            if (taskbarParams.height != height) {
+                taskbarParams.height = height
+                binding.taskbar.layoutParams = taskbarParams
+            }
+        }
+        if (::startMenuResizeHandle.isInitialized) {
+            val handleParams = startMenuResizeHandle.layoutParams
+            val size = (40 * density).toInt().coerceAtLeast(1)
+            if (handleParams.width != size || handleParams.height != size) {
+                handleParams.width = size
+                handleParams.height = size
+                startMenuResizeHandle.layoutParams = handleParams
+            }
+        }
+        val rootWidth = binding.root.width
+        val workspaceHeight = binding.appsContainer.height
+        if (rootWidth <= 0 || workspaceHeight <= 0) return
+        val baseDensity = resources.displayMetrics.density
+        val scale = AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
+        val horizontalMargin = (20 * density).toInt()
+        val width = minOf((appearance.startMenuWidthDp * density).toInt(), (rootWidth - horizontalMargin).coerceAtLeast(1))
+        val rootHeight = binding.root.height.takeIf { it > 0 }
+            ?: resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val menuBounds = LauncherMenuGeometry.calculate(
+            rootHeightPx = rootHeight,
+            workspaceHeightPx = workspaceHeight,
+            baseDensity = baseDensity,
+            densityScale = scale,
+            requestedHeightDp = appearance.startMenuHeightDp
+        )
+        val height = menuBounds.heightPx
+        val params = binding.startMenu.layoutParams as? ConstraintLayout.LayoutParams ?: return
+        val margins = params as? android.view.ViewGroup.MarginLayoutParams
+        var marginsChanged = false
+        if (margins != null) {
+            val left = (10 * density).toInt()
+            val bottom = menuBounds.bottomMarginPx
+            marginsChanged = margins.leftMargin != left || margins.bottomMargin != bottom
+            margins.leftMargin = left
+            margins.bottomMargin = bottom
+        }
+        val oldBottomToTop = params.bottomToTop
+        val oldBottomToBottom = params.bottomToBottom
+        params.bottomToTop = if (menuBounds.overlapsTaskbar) ConstraintLayout.LayoutParams.UNSET else R.id.taskbar
+        params.bottomToBottom = if (menuBounds.overlapsTaskbar) ConstraintLayout.LayoutParams.PARENT_ID else ConstraintLayout.LayoutParams.UNSET
+        binding.startMenu.translationZ = if (menuBounds.overlapsTaskbar) 10f * baseDensity else 0f
+        if (params.width != width || params.height != height || marginsChanged) {
             params.width = width
             params.height = height
             binding.startMenu.layoutParams = params
+        } else if (params.bottomToTop != oldBottomToTop || params.bottomToBottom != oldBottomToBottom) {
+            binding.startMenu.layoutParams = params
         }
     }
+
+    private fun effectiveLauncherDensity(): Float = resources.displayMetrics.density *
+        AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
 
     private fun onServiceState(state: RemoteServiceHelper.State) {
         if (destroyed) return

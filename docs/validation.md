@@ -17,6 +17,8 @@ Repeat on Android 12 and a recent Android version, with root and with Shizuku ru
 9. Check both overlays in light and dark mode, at narrow and wide workspace widths, and with keyboard or screen-reader navigation. Verify that Recents refreshes and scrolls the task list to the beginning. Tap the upper and lower portions of the clock to open Clock and Calendar respectively.
 10. Open Appearance and verify that both sliders apply immediately and reset preserves taskbar preferences. Open Configure and verify that task scope and icon-only mode apply immediately and persist across reopening.
 11. Enable the start-menu resize handle, drag its top-right corner inward and outward, and verify size persistence after reopening Compound. Test clamping at narrow and short desktop bounds, then reset appearance and verify that the handle is hidden and the default size returns.
+12. In Configure, set launcher density to the low and high endpoints and confirm only Compound's launcher UI changes size without changing the device's system density. Change app-window density at 0.1× and 4.0× with a hosted app open, verify that app reflows, then launch another app and confirm the saved multiplier is used.
+13. On a short landscape display, set launcher density to 4.0× and confirm the Start menu extends over the taskbar as needed and the action list can still scroll to Configure. Reset appearance and confirm launcher UI returns to 1.0× while taskbar preferences persist.
 
 ## Recorded results
 
