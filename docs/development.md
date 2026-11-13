@@ -26,6 +26,10 @@ adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 
 The tests add KEEP_SCREEN_ON to their Activity while it is visible; this does not unlock a locked device. Do not change the user's lock credentials, global timeout, density or rotation settings to make a test pass.
 
+## Select Compound as the system launcher
+
+Compound remains available as a regular app and also advertises the Android Home role. Open Android's **Default apps > Home app** settings and select Compound; device/OEM settings labels may vary. To return to the previous launcher, choose it from the same setting. Verify the app still appears in the regular app launcher after changing the default.
+
 ## Run instrumentation
 
 Run the integration class against the installed APKs:

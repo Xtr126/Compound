@@ -41,6 +41,19 @@ class DesktopIntegrationTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
+    @Test fun mainActivityIsAvailableAsSystemHomeAndAppLauncher() {
+        val packageManager = context.packageManager
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+
+        fun resolvesToCompound(intent: Intent): Boolean = packageManager
+            .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            .any { it.activityInfo.packageName == context.packageName && it.activityInfo.name == MainActivity::class.java.name }
+
+        assertTrue("Compound must be listed as a selectable Home app", resolvesToCompound(homeIntent))
+        assertTrue("Compound must remain available in the app launcher", resolvesToCompound(launcherIntent))
+    }
+
     @Test fun appearancePersistsClampsAndResetPreservesTaskScope() {
         val prefs = context.getSharedPreferences("appearance_settings", Context.MODE_PRIVATE)
         val old = HashMap(prefs.all)

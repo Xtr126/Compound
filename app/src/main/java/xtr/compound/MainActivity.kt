@@ -26,6 +26,7 @@ import xtr.compound.databinding.ActivityFullscreenBinding
 import xtr.compound.server.RemoteServiceHelper
 import xtr.compound.server.RunningTask
 import java.util.concurrent.Executors
+import androidx.core.graphics.drawable.toDrawable
 
 /** Desktop UI; Binder work runs on workers and is reconciled on the main thread. */
 class MainActivity : AppCompatActivity() {
@@ -195,13 +196,14 @@ class MainActivity : AppCompatActivity() {
     private fun createStartMenuResizeHandle() {
         val density = resources.displayMetrics.density
         startMenuResizeHandle = ImageView(this).apply {
-            setImageResource(R.drawable.baseline_zoom_out_map_24)
+            setImageResource(R.drawable.outline_resize_window_24)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
             imageTintList = android.content.res.ColorStateList.valueOf(
                 androidx.core.content.ContextCompat.getColor(this@MainActivity, R.color.compoundOnSurface)
             )
             background = android.graphics.drawable.RippleDrawable(
                 android.content.res.ColorStateList.valueOf(0x33777777),
-                android.graphics.drawable.ColorDrawable(Color.TRANSPARENT),
+                Color.TRANSPARENT.toDrawable(),
                 null
             )
             contentDescription = getString(R.string.resize_start_menu_handle)

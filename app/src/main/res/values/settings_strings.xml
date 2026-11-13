@@ -6,7 +6,6 @@
     <string name="opacity_percent_value">%1$d%%</string>
     <string name="opacity_percent_description">Opacity %1$d percent</string>
     <string name="background_blur">Background blur</string>
-    <string name="background_blur_radius">Background blur radius</string>
     <string name="background_blur_radius_semantics">Background blur radius, dp</string>
     <string name="blur_dp_value">%1$d dp</string>
     <string name="blur_dp_description">Background blur %1$d dp</string>
