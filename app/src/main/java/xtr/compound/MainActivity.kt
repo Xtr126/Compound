@@ -1,4 +1,3 @@
-/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 package xtr.compound
 
 import android.content.Intent
@@ -57,8 +56,6 @@ class MainActivity : AppCompatActivity() {
     private val wallpaperChangedReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: Intent?) {
             applyDesktopWallpaper(forceRefresh = true)
-            if (::legacyTaskbarBlur.isInitialized) legacyTaskbarBlur.refresh()
-            if (::legacyMenuBlur.isInitialized) legacyMenuBlur.refresh()
         }
     }
     private var activeTaskKey by mutableStateOf<String?>(null)
@@ -221,6 +218,14 @@ class MainActivity : AppCompatActivity() {
             binding.root.setBackgroundResource(R.drawable.wallpaper)
         }
         appliedSystemWallpaper = useSystemWallpaper
+        refreshWallpaperSnapshots()
+    }
+
+    private fun refreshWallpaperSnapshots() {
+        if (::legacyTaskbarBlur.isInitialized) legacyTaskbarBlur.refresh()
+        if (::legacyMenuBlur.isInitialized && binding.startMenu.visibility == View.VISIBLE) {
+            legacyMenuBlur.refresh()
+        }
     }
 
     @Suppress("DEPRECATION") // Android continues to broadcast this action when wallpaper changes.

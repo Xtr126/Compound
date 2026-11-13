@@ -1,4 +1,3 @@
-/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 # Appearance settings
 
 Compound stores its appearance and taskbar preferences in the app's private `appearance_settings` SharedPreferences file. The explicit defaults are **80% opacity**, **25 dp background blur**, the bundled wallpaper (`useSystemWallpaper = false`), **Compound-only task scope** (`showAllTasks = false`), and **task names with icons** (`taskbarIconsOnly = false`). Opacity is clamped to 0–100 percent and the blur radius to 0–100 dp. `resetAppearance()` restores the appearance values, including the bundled wallpaper choice; task scope and taskbar presentation remain as selected.
