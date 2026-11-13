@@ -1,3 +1,4 @@
 <resources>
     <item name="settingsDialogBackground" type="id" />
+    <item name="startMenuResizeGesture" type="id" />
 </resources>

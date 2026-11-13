@@ -218,6 +218,18 @@ private fun AppearancePage(
 ) {
     var opacity by remember(settings, resetVersion) { mutableFloatStateOf(settings.opacityPercent.toFloat()) }
     var radius by remember(settings, resetVersion) { mutableFloatStateOf(settings.blurRadiusDp.toFloat()) }
+    var resizeHandleEnabled by remember(settings, resetVersion) { mutableStateOf(settings.startMenuResizeEnabled) }
+
+    SettingSwitch(
+        label = stringResource(R.string.resize_start_menu),
+        description = stringResource(R.string.resize_start_menu_description),
+        checked = resizeHandleEnabled,
+        onCheckedChange = {
+            resizeHandleEnabled = it
+            settings.startMenuResizeEnabled = it
+            onChanged()
+        }
+    )
 
     Text(stringResource(R.string.background_opacity), style = MaterialTheme.typography.titleSmall)
     val opacityDescription = stringResource(R.string.background_opacity_semantics)

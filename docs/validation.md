@@ -16,6 +16,7 @@ Repeat on Android 12 and a recent Android version, with root and with Shizuku ru
 8. Open the Start menu from the taskbar, scroll the app list and grid, and launch an app from each. Check the device settings, Appearance, Configure, files, and power actions. Verify that the power action is disabled while disconnected and that long-pressing Start opens setup.
 9. Check both overlays in light and dark mode, at narrow and wide workspace widths, and with keyboard or screen-reader navigation. Verify that Recents refreshes and scrolls the task list to the beginning. Tap the upper and lower portions of the clock to open Clock and Calendar respectively.
 10. Open Appearance and verify that both sliders apply immediately and reset preserves taskbar preferences. Open Configure and verify that task scope and icon-only mode apply immediately and persist across reopening.
+11. Enable the start-menu resize handle, drag its top-right corner inward and outward, and verify size persistence after reopening Compound. Test clamping at narrow and short desktop bounds, then reset appearance and verify that the handle is hidden and the default size returns.
 
 ## Recorded results
 

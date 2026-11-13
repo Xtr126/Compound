@@ -64,20 +64,36 @@ class DesktopIntegrationTest {
             assertEquals(25, settings.blurRadiusDp)
             assertFalse(settings.showAllTasks)
             assertFalse(settings.taskbarIconsOnly)
+            assertFalse(settings.startMenuResizeEnabled)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_WIDTH_DP, settings.startMenuWidthDp)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_HEIGHT_DP, settings.startMenuHeightDp)
             settings.opacityPercent = -10
             settings.blurRadiusDp = 120
             settings.showAllTasks = true
             settings.taskbarIconsOnly = true
+            settings.startMenuResizeEnabled = true
+            settings.startMenuWidthDp = 900
+            settings.startMenuHeightDp = 700
             val reopened = AppearanceSettings(context)
             assertEquals(0, reopened.opacityPercent)
             assertEquals(100, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue(reopened.taskbarIconsOnly)
+            assertTrue(reopened.startMenuResizeEnabled)
+            assertEquals(900, reopened.startMenuWidthDp)
+            assertEquals(700, reopened.startMenuHeightDp)
+            settings.startMenuWidthDp = -1
+            settings.startMenuHeightDp = AppearanceSettings.MAX_START_MENU_SIZE_DP + 1
+            assertEquals(AppearanceSettings.MIN_START_MENU_WIDTH_DP, reopened.startMenuWidthDp)
+            assertEquals(AppearanceSettings.MAX_START_MENU_SIZE_DP, reopened.startMenuHeightDp)
             settings.resetAppearance()
             assertEquals(80, reopened.opacityPercent)
             assertEquals(25, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue("Reset appearance must preserve taskbar presentation", reopened.taskbarIconsOnly)
+            assertFalse("Reset must disable the resize affordance", reopened.startMenuResizeEnabled)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_WIDTH_DP, reopened.startMenuWidthDp)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_HEIGHT_DP, reopened.startMenuHeightDp)
         } finally {
             val edit = prefs.edit().clear()
             old.forEach { (key, value) -> when (value) {

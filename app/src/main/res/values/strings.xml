@@ -10,6 +10,7 @@
     <string name="resize_window_left_edge">Resize window from left edge</string>
     <string name="resize_window_right_edge">Resize window from right edge</string>
     <string name="resize_window_bottom_edge">Resize window from bottom edge</string>
+    <string name="resize_start_menu_handle">Resize start menu</string>
     <string name="increase_window_width">Increase window width</string>
     <string name="decrease_window_width">Decrease window width</string>
     <string name="increase_window_height">Increase window height</string>
