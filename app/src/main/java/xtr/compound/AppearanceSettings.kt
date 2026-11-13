@@ -24,10 +24,26 @@ class AppearanceSettings(context: Context) {
         get() = preferences.getBoolean(KEY_TASKBAR_ICONS_ONLY, DEFAULT_TASKBAR_ICONS_ONLY)
         set(value) { preferences.edit().putBoolean(KEY_TASKBAR_ICONS_ONLY, value).apply() }
 
+    /** Whether the start menu exposes a draggable top-right resize handle. */
+    var startMenuResizeEnabled: Boolean
+        get() = preferences.getBoolean(KEY_START_MENU_RESIZE_ENABLED, DEFAULT_START_MENU_RESIZE_ENABLED)
+        set(value) { preferences.edit().putBoolean(KEY_START_MENU_RESIZE_ENABLED, value).apply() }
+
+    var startMenuWidthDp: Int
+        get() = preferences.getInt(KEY_START_MENU_WIDTH_DP, DEFAULT_START_MENU_WIDTH_DP).coerceIn(MIN_START_MENU_WIDTH_DP, MAX_START_MENU_SIZE_DP)
+        set(value) { preferences.edit().putInt(KEY_START_MENU_WIDTH_DP, value.coerceIn(MIN_START_MENU_WIDTH_DP, MAX_START_MENU_SIZE_DP)).apply() }
+
+    var startMenuHeightDp: Int
+        get() = preferences.getInt(KEY_START_MENU_HEIGHT_DP, DEFAULT_START_MENU_HEIGHT_DP).coerceIn(MIN_START_MENU_HEIGHT_DP, MAX_START_MENU_SIZE_DP)
+        set(value) { preferences.edit().putInt(KEY_START_MENU_HEIGHT_DP, value.coerceIn(MIN_START_MENU_HEIGHT_DP, MAX_START_MENU_SIZE_DP)).apply() }
+
     fun resetAppearance() {
         preferences.edit()
             .putInt(KEY_OPACITY, DEFAULT_OPACITY)
             .putInt(KEY_BLUR_RADIUS, DEFAULT_BLUR_RADIUS)
+            .putBoolean(KEY_START_MENU_RESIZE_ENABLED, DEFAULT_START_MENU_RESIZE_ENABLED)
+            .putInt(KEY_START_MENU_WIDTH_DP, DEFAULT_START_MENU_WIDTH_DP)
+            .putInt(KEY_START_MENU_HEIGHT_DP, DEFAULT_START_MENU_HEIGHT_DP)
             .apply()
     }
 
@@ -36,10 +52,19 @@ class AppearanceSettings(context: Context) {
         const val DEFAULT_BLUR_RADIUS = 25
         const val DEFAULT_ALL_TASKS = false
         const val DEFAULT_TASKBAR_ICONS_ONLY = false
+        const val DEFAULT_START_MENU_RESIZE_ENABLED = false
+        const val DEFAULT_START_MENU_WIDTH_DP = 620
+        const val DEFAULT_START_MENU_HEIGHT_DP = 580
+        const val MIN_START_MENU_WIDTH_DP = 320
+        const val MIN_START_MENU_HEIGHT_DP = 280
+        const val MAX_START_MENU_SIZE_DP = 4096
         private const val PREFS_NAME = "appearance_settings"
         private const val KEY_OPACITY = "opacity_percent"
         private const val KEY_BLUR_RADIUS = "blur_radius_dp"
         private const val KEY_ALL_TASKS = "show_all_tasks"
         private const val KEY_TASKBAR_ICONS_ONLY = "taskbar_icons_only"
+        private const val KEY_START_MENU_RESIZE_ENABLED = "start_menu_resize_enabled"
+        private const val KEY_START_MENU_WIDTH_DP = "start_menu_width_dp"
+        private const val KEY_START_MENU_HEIGHT_DP = "start_menu_height_dp"
     }
 }

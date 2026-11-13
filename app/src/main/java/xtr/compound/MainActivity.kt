@@ -13,6 +13,8 @@ import android.view.View
 import android.view.WindowManager
 import android.view.WindowInsets
 import android.widget.Toast
+import android.widget.ImageView
+import android.widget.FrameLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
@@ -48,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private var setupDialog: AlertDialog? = null
     private var taskErrorShown = false
     private var startMenuPowerEnabled by mutableStateOf(false)
+    private lateinit var startMenuResizeHandle: ImageView
     private var windowCount = 0
     private var activeTaskKey by mutableStateOf<String?>(null)
     private var lastFocusedHostedKey: String? = null
@@ -96,16 +99,10 @@ class MainActivity : AppCompatActivity() {
         binding.background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacyMenuBlur.refresh()
         }
+        createStartMenuResizeHandle()
         applyAppearance()
         binding.appsContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            val density = resources.displayMetrics.density
-            val params = binding.startMenu.layoutParams
-            val width = minOf((620 * density).toInt(), (binding.root.width - 20 * density).toInt()).coerceAtLeast(1)
-            val height = minOf((580 * density).toInt(), (binding.appsContainer.height - 20 * density).toInt()).coerceAtLeast(1)
-            if (params.width != width || params.height != height) {
-                params.width = width; params.height = height
-                binding.startMenu.layoutParams = params
-            }
+            applyStartMenuSize()
         }
         binding.taskbar.setContent {
             DesktopTheme {
@@ -189,6 +186,94 @@ class MainActivity : AppCompatActivity() {
     private fun applyAppearance() {
         taskbarBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
         menuBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
+        if (::startMenuResizeHandle.isInitialized) {
+            startMenuResizeHandle.visibility = if (appearance.startMenuResizeEnabled) View.VISIBLE else View.GONE
+            applyStartMenuSize()
+        }
+    }
+
+    private fun createStartMenuResizeHandle() {
+        val density = resources.displayMetrics.density
+        startMenuResizeHandle = ImageView(this).apply {
+            setImageResource(R.drawable.baseline_zoom_out_map_24)
+            imageTintList = android.content.res.ColorStateList.valueOf(
+                androidx.core.content.ContextCompat.getColor(this@MainActivity, R.color.compoundOnSurface)
+            )
+            background = android.graphics.drawable.RippleDrawable(
+                android.content.res.ColorStateList.valueOf(0x33777777),
+                android.graphics.drawable.ColorDrawable(Color.TRANSPARENT),
+                null
+            )
+            contentDescription = getString(R.string.resize_start_menu_handle)
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            visibility = if (appearance.startMenuResizeEnabled) View.VISIBLE else View.GONE
+            pointerIcon = android.view.PointerIcon.getSystemIcon(
+                this@MainActivity, android.view.PointerIcon.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW
+            )
+            setOnTouchListener { view, event ->
+                when (event.actionMasked) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        view.setTag(R.id.startMenuResizeGesture, intArrayOf(
+                            binding.startMenu.width,
+                            binding.startMenu.height,
+                            event.rawX.toInt(),
+                            event.rawY.toInt()
+                        ))
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_MOVE -> {
+                        val start = view.getTag(R.id.startMenuResizeGesture) as? IntArray ?: return@setOnTouchListener true
+                        val bounds = startMenuResizeBounds()
+                        val size = StartMenuResizeGeometry.resize(
+                            initialWidth = start[0], initialHeight = start[1],
+                            deltaX = event.rawX.toInt() - start[2], deltaY = event.rawY.toInt() - start[3],
+                            maxWidth = bounds.first, maxHeight = bounds.second,
+                            minWidth = (AppearanceSettings.MIN_START_MENU_WIDTH_DP * density).toInt(),
+                            minHeight = (AppearanceSettings.MIN_START_MENU_HEIGHT_DP * density).toInt()
+                        )
+                        binding.startMenu.layoutParams = binding.startMenu.layoutParams.apply {
+                            width = size.width
+                            height = size.height
+                        }
+                        appearance.startMenuWidthDp = (size.width / density).toInt()
+                        appearance.startMenuHeightDp = (size.height / density).toInt()
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                        view.performClick()
+                        view.setTag(R.id.startMenuResizeGesture, null)
+                        true
+                    }
+                    else -> true
+                }
+            }
+            setOnClickListener { }
+            layoutParams = FrameLayout.LayoutParams((40 * density).toInt(), (40 * density).toInt(),
+                android.view.Gravity.TOP or android.view.Gravity.END)
+        }
+        binding.startMenu.addView(startMenuResizeHandle)
+    }
+
+    private fun startMenuResizeBounds(): Pair<Int, Int> {
+        val density = resources.displayMetrics.density
+        return Pair(
+            (binding.root.width - 20 * density).toInt().coerceAtLeast(1),
+            (binding.appsContainer.height - 20 * density).toInt().coerceAtLeast(1)
+        )
+    }
+
+    private fun applyStartMenuSize() {
+        if (binding.root.width <= 0 || binding.appsContainer.height <= 0) return
+        val density = resources.displayMetrics.density
+        val bounds = startMenuResizeBounds()
+        val width = (appearance.startMenuWidthDp * density).toInt().coerceAtMost(bounds.first)
+        val height = (appearance.startMenuHeightDp * density).toInt().coerceAtMost(bounds.second)
+        val params = binding.startMenu.layoutParams
+        if (params.width != width || params.height != height) {
+            params.width = width
+            params.height = height
+            binding.startMenu.layoutParams = params
+        }
     }
 
     private fun onServiceState(state: RemoteServiceHelper.State) {
