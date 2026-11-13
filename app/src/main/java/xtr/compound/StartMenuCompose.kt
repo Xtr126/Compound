@@ -170,8 +170,13 @@ private fun launchApp(context: android.content.Context, app: LaunchableApp, wind
 
 @Composable
 private fun MenuAction(icon: Int, description: String, onClick: () -> Unit, enabled: Boolean = true) {
+    val iconTint = MaterialTheme.colorScheme.onSurface
     IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(40.dp)) {
-        Icon(painterResource(icon), contentDescription = description)
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = description,
+            tint = if (enabled) iconTint else iconTint.copy(alpha = 0.38f)
+        )
     }
 }
 

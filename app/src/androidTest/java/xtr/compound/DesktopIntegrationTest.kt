@@ -42,6 +42,19 @@ class DesktopIntegrationTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
+    @Test fun mainActivityIsAvailableAsSystemHomeAndAppLauncher() {
+        val packageManager = context.packageManager
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+
+        fun resolvesToCompound(intent: Intent): Boolean = packageManager
+            .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            .any { it.activityInfo.packageName == context.packageName && it.activityInfo.name == MainActivity::class.java.name }
+
+        assertTrue("Compound must be listed as a selectable Home app", resolvesToCompound(homeIntent))
+        assertTrue("Compound must remain available in the app launcher", resolvesToCompound(launcherIntent))
+    }
+
     @Test fun appearancePersistsClampsAndResetPreservesTaskScope() {
         val prefs = context.getSharedPreferences("appearance_settings", Context.MODE_PRIVATE)
         val old = HashMap(prefs.all)
@@ -53,29 +66,48 @@ class DesktopIntegrationTest {
             assertFalse(settings.showAllTasks)
             assertFalse(settings.taskbarIconsOnly)
             assertFalse(settings.useSystemWallpaper)
+            assertFalse(settings.startMenuResizeEnabled)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_WIDTH_DP, settings.startMenuWidthDp)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_HEIGHT_DP, settings.startMenuHeightDp)
+            assertEquals(AppearanceSettings.DEFAULT_DENSITY_MULTIPLIER, settings.launcherDensityMultiplier)
+            assertEquals(AppearanceSettings.DEFAULT_DENSITY_MULTIPLIER, settings.appWindowDensityMultiplier)
             settings.opacityPercent = -10
             settings.blurRadiusDp = 120
             settings.showAllTasks = true
             settings.taskbarIconsOnly = true
             settings.useSystemWallpaper = true
+            settings.startMenuResizeEnabled = true
+            settings.startMenuWidthDp = 900
+            settings.startMenuHeightDp = 700
             val reopened = AppearanceSettings(context)
             assertEquals(0, reopened.opacityPercent)
             assertEquals(100, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue(reopened.taskbarIconsOnly)
             assertTrue(reopened.useSystemWallpaper)
+            assertTrue(reopened.startMenuResizeEnabled)
+            assertEquals(900, reopened.startMenuWidthDp)
+            assertEquals(700, reopened.startMenuHeightDp)
+            settings.startMenuWidthDp = -1
+            settings.startMenuHeightDp = AppearanceSettings.MAX_START_MENU_SIZE_DP + 1
+            assertEquals(AppearanceSettings.MIN_START_MENU_WIDTH_DP, reopened.startMenuWidthDp)
+            assertEquals(AppearanceSettings.MAX_START_MENU_SIZE_DP, reopened.startMenuHeightDp)
             settings.resetAppearance()
             assertEquals(80, reopened.opacityPercent)
             assertEquals(25, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue("Reset appearance must preserve taskbar presentation", reopened.taskbarIconsOnly)
             assertFalse("Reset appearance restores the bundled wallpaper", reopened.useSystemWallpaper)
+            assertFalse("Reset must disable the resize affordance", reopened.startMenuResizeEnabled)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_WIDTH_DP, reopened.startMenuWidthDp)
+            assertEquals(AppearanceSettings.DEFAULT_START_MENU_HEIGHT_DP, reopened.startMenuHeightDp)
         } finally {
             val edit = prefs.edit().clear()
             old.forEach { (key, value) -> when (value) {
                 is Int -> edit.putInt(key, value)
                 is Boolean -> edit.putBoolean(key, value)
                 is String -> edit.putString(key, value)
+                is Float -> edit.putFloat(key, value)
             } }
             edit.commit()
         }
@@ -215,9 +247,13 @@ class DesktopIntegrationTest {
         val settings = AppearanceSettings(context)
         val oldScope = settings.showAllTasks
         val oldIconsOnly = settings.taskbarIconsOnly
+        val oldLauncherDensity = settings.launcherDensityMultiplier
+        val oldAppWindowDensity = settings.appWindowDensityMultiplier
         try {
             settings.showAllTasks = false
             settings.taskbarIconsOnly = false
+            settings.launcherDensityMultiplier = 1.0f
+            settings.appWindowDensityMultiplier = 1.0f
             ActivityScenario.launch(MainActivity::class.java).use {
                 clickDesktopControl(R.string.open_start_menu)
                 clickDesktopControl(R.string.configure_settings)
@@ -226,15 +262,47 @@ class DesktopIntegrationTest {
                 assertTrue(settings.showAllTasks)
                 composeRule.onNode(hasText("Show taskbar icons only")).performClick()
                 assertTrue(settings.taskbarIconsOnly)
+                val launcherDensity = composeRule.onNode(
+                    hasContentDescription("Launcher density multiplier, from 0.1x to 4.0x")
+                )
+                launcherDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(0.1f) }
+                assertEquals(0.1f, settings.launcherDensityMultiplier, 0f)
+                launcherDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(4.0f) }
+                assertEquals(4.0f, settings.launcherDensityMultiplier, 0f)
+                val appDensity = composeRule.onNode(
+                    hasContentDescription("Virtual display density multiplier, from 0.1x to 4.0x")
+                )
+                appDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(0.1f) }
+                assertEquals(0.1f, settings.appWindowDensityMultiplier, 0f)
+                appDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(4.0f) }
+                assertEquals(4.0f, settings.appWindowDensityMultiplier, 0f)
+                it.onActivity { activity ->
+                    assertEquals(
+                        "The Compound launcher slider must not change Android's activity display density",
+                        activity.resources.displayMetrics.densityDpi,
+                        context.resources.displayMetrics.densityDpi
+                    )
+                }
                 composeRule.onNode(hasText("Close")).performClick()
                 clickDesktopControl(R.string.configure_settings)
                 composeRule.onNode(hasText("Show all Android tasks")).assertIsOn()
+                composeRule.onNode(hasContentDescription("Launcher density: 4.0 times the default display density"))
+                    .assertExists()
+                composeRule.onNode(hasContentDescription("App window density: 4.0 times the default display density"))
+                    .assertExists()
+                composeRule.onNode(hasContentDescription("Launcher density multiplier, from 0.1x to 4.0x"))
+                    .performSemanticsAction(SemanticsActions.SetProgress) { it(1.0f) }
+                composeRule.waitForIdle()
                 composeRule.onNode(hasText("Show taskbar icons only")).assertIsOn().performClick()
                 assertFalse(settings.taskbarIconsOnly)
+                composeRule.onNode(hasContentDescription("Virtual display density multiplier, from 0.1x to 4.0x"))
+                    .assertExists()
             }
         } finally {
             settings.showAllTasks = oldScope
             settings.taskbarIconsOnly = oldIconsOnly
+            settings.launcherDensityMultiplier = oldLauncherDensity
+            settings.appWindowDensityMultiplier = oldAppWindowDensity
         }
     }
 

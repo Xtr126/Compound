@@ -6,7 +6,6 @@
     <string name="opacity_percent_value">%1$d%%</string>
     <string name="opacity_percent_description">Opacity %1$d percent</string>
     <string name="background_blur">Background blur</string>
-    <string name="background_blur_radius">Background blur radius</string>
     <string name="background_blur_radius_semantics">Background blur radius, dp</string>
     <string name="blur_dp_value">%1$d dp</string>
     <string name="blur_dp_description">Background blur %1$d dp</string>
@@ -18,5 +17,13 @@
     <string name="show_all_android_tasks_help">When off, Compound shows only its own windows.</string>
     <string name="show_taskbar_icons_only">Show taskbar icons only</string>
     <string name="show_taskbar_icons_only_description">Show taskbar app icons without labels, centered with an indicator below the active task</string>
+    <string name="resize_start_menu">Resize start menu</string>
+    <string name="resize_start_menu_description">Show a handle in the top-right corner to resize the start menu. Its size is saved.</string>
+    <string name="launcher_density">Launcher density</string>
+    <string name="launcher_density_semantics">Launcher density multiplier, from 0.1x to 4.0x</string>
+    <string name="app_window_density">App window density</string>
+    <string name="app_window_density_semantics">Virtual display density multiplier, from 0.1x to 4.0x</string>
+    <string name="density_multiplier_value">%1$.1f×</string>
+    <string name="density_multiplier_description">%1$s: %2$.1f times the default display density</string>
     <string name="shizuku_setup">Shizuku setup</string>
 </resources>
