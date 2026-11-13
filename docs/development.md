@@ -115,3 +115,9 @@ CI explicitly requests only `platform-tools` from setup-android; its default `to
 ### Taskbar system shortcuts contributions
 
 The Wi-Fi/battery workstream added settings panels, fallbacks, and accessible button names. The notifications workstream added the privileged shade action and compatibility helper. Their combined change uses version code 5 to refresh the Shizuku service after adding the AIDL operation. Assemble, unit tests, and lint cover the combined source; root/Shizuku panel behavior still requires manual device checks.
+
+### Compose migration contributions
+
+- The Start menu workstream moved the app list, app grid, and menu actions into a `ComposeView` and retained the launcher query and window-launch callbacks.
+- The taskbar workstream moved the running-task list and system shortcuts into a second `ComposeView`.
+- Shared integration added the Compose compiler plugin, BOM, and desktop theme. Both overlays retain View-backed snapshot capture. `MainActivity` continues to coordinate privileged operations and window lifecycle.

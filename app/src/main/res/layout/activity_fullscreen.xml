@@ -17,19 +17,30 @@
 
     </FrameLayout>
 
-    <include
+    <FrameLayout
         android:id="@+id/startMenu"
-        layout="@layout/start_menu_layout"
         android:layout_width="620dp"
         android:layout_height="580dp"
         android:layout_marginLeft="10dp"
         android:layout_marginBottom="10dp"
+        android:background="@drawable/start_menu_clip"
+        android:clipToOutline="true"
         android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@+id/taskbar"
-        app:layout_constraintLeft_toLeftOf="parent"
-        tools:visibility="visible">
+        app:layout_constraintLeft_toLeftOf="parent">
 
-    </include>
+        <ImageView
+            android:id="@+id/background"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/startMenuContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
 
 
     <ImageView
@@ -44,16 +55,14 @@
         app:layout_constraintTop_toTopOf="@id/taskbar"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <include
+    <androidx.compose.ui.platform.ComposeView
         android:id="@+id/taskbar"
-        layout="@layout/taskbar_layout"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         android:visibility="invisible"
         tools:visibility="visible">
-
-    </include>
+    </androidx.compose.ui.platform.ComposeView>
 
 
 

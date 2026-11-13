@@ -1,5 +1,7 @@
 [versions]
 agp = "9.5.1"
+kotlin = "2.4.21"
+composeBom = "2026.09.00"
 core = "5.3.0"
 coreKtx = "1.19.1"
 junit = "4.13.2"
@@ -13,6 +15,10 @@ service = "5.3.0"
 shizuku = "13.1.5"
 
 [libraries]
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -28,4 +34,5 @@ shizuku-api = { group = "dev.rikka.shizuku", name="api", version.ref = "shizuku"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 

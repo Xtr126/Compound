@@ -7,14 +7,22 @@ import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.LayerDrawable
+import android.view.View
 import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
-import android.view.View
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.performClick
 import com.google.android.material.slider.Slider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import rikka.shizuku.Shizuku
@@ -25,6 +33,7 @@ import xtr.compound.server.RemoteServiceHelper
 /** Device tests exercise real preferences, surfaces and shell-privileged Binder calls. */
 @RunWith(AndroidJUnit4::class)
 class DesktopIntegrationTest {
+    @get:Rule val composeRule = createEmptyComposeRule()
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
@@ -69,39 +78,59 @@ class DesktopIntegrationTest {
         ).toString()
         val entry = TaskbarEntry("task:123", "A different activity title", context.packageName,
             displayId = 0, taskId = 123, hosted = false)
-        val adapter = RunningTasksAdapter(context, {}, {})
-        adapter.submit(listOf(entry))
-        adapter.setIconsOnly(true)
-        adapter.setActiveEntry(entry.key)
-        instrumentation.runOnMainSync {
-            val parent = androidx.recyclerview.widget.RecyclerView(context)
-            val holder = adapter.onCreateViewHolder(parent, 0)
-            adapter.onBindViewHolder(holder, 0)
-            assertEquals(appLabel, holder.label.text.toString())
-            assertEquals(View.GONE, holder.label.visibility)
-            assertEquals(View.VISIBLE, holder.indicator.visibility)
-            assertTrue(holder.row.contentDescription.toString().contains("active task"))
-            assertTrue("Long press must remain discoverable for closing icon-only entries",
-                holder.row.contentDescription.toString().contains("Long press to close"))
+        withTaskbar(listOf(entry), iconsOnly = true, activeKey = entry.key) {
+            composeRule.onNode(hasContentDescription("$appLabel, active task. Long press to close"))
+                .assertExists()
+            composeRule.onNode(hasText(appLabel), useUnmergedTree = true).assertDoesNotExist()
         }
     }
 
     @Test fun taskbarDoesNotCacheFallbackTitlesForMissingPackages() {
-        val adapter = RunningTasksAdapter(context, {}, {})
         val entries = listOf(
             TaskbarEntry("first", "First activity", "missing.example.package", 0, 1, false),
             TaskbarEntry("second", "Second activity", "missing.example.package", 0, 2, false)
         )
-        adapter.submit(entries)
-        instrumentation.runOnMainSync {
-            val parent = androidx.recyclerview.widget.RecyclerView(context)
-            val first = adapter.onCreateViewHolder(parent, 0)
-            adapter.onBindViewHolder(first, 0)
-            val second = adapter.onCreateViewHolder(parent, 0)
-            adapter.onBindViewHolder(second, 1)
-            assertEquals("First activity", first.label.text.toString())
-            assertEquals("Second activity", second.label.text.toString())
+        withTaskbar(entries, iconsOnly = false, activeKey = null) {
+            composeRule.onNode(hasContentDescription("First activity"), useUnmergedTree = true).assertExists()
+            composeRule.onNode(hasContentDescription("Second activity"), useUnmergedTree = true).assertExists()
         }
+    }
+
+    private fun withTaskbar(
+        entries: List<TaskbarEntry>,
+        iconsOnly: Boolean,
+        activeKey: String?,
+        assertions: () -> Unit
+    ) {
+        ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.setContentView(ComposeView(activity).apply {
+                    setContent { testTaskbar(entries, iconsOnly, activeKey) }
+                })
+            }
+            assertions()
+        }
+    }
+
+    @Composable
+    private fun testTaskbar(entries: List<TaskbarEntry>, iconsOnly: Boolean, activeKey: String?) {
+        TaskbarContent(
+            entries = entries,
+            iconsOnly = iconsOnly,
+            activeKey = activeKey,
+            serviceStatus = null,
+            onStart = {},
+            onStartLongPress = {},
+            onBack = {},
+            onHome = {},
+            onRecents = {},
+            onWifi = {},
+            onBattery = {},
+            onClock = {},
+            onNotifications = {},
+            onFocus = {},
+            onClose = {}
+        )
     }
 
     @Test fun appearanceDialogSlidersApplyImmediately() {
@@ -114,8 +143,9 @@ class DesktopIntegrationTest {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 scenario.onActivity { activity ->
                     activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    activity.findViewById<View>(R.id.settingsButton).performClick()
                 }
+                clickDesktopControl(R.string.open_start_menu)
+                clickDesktopControl(R.string.compound_settings)
                 // AlertDialog's OnShow handler installs the background and reset action asynchronously.
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->
@@ -165,7 +195,7 @@ class DesktopIntegrationTest {
                     assertEquals(80, settings.opacityPercent)
                     assertEquals(25, settings.blurRadiusDp)
                     assertTrue("Reset appearance must preserve taskbar scope", settings.showAllTasks)
-                    assertEquals(1f, activity.findViewById<View>(R.id.startMenuButton).alpha, 0f)
+                    assertEquals(1f, activity.findViewById<View>(R.id.startMenu).alpha, 0f)
                     dialog.dismiss()
                 }
             }
@@ -216,8 +246,8 @@ class DesktopIntegrationTest {
                 }
                 taskbarHelper.update(true, LiveBackgroundBlur.fallbackTint(50, false), 0f)
                 assertSnapshotTintOpacity(background, 50)
-                activity.findViewById<View>(R.id.startMenuButton).performClick()
             }
+            clickDesktopControl(R.string.open_start_menu)
             Thread.sleep(600)
             scenario.onActivity { activity ->
                 val menu = activity.findViewById<View>(R.id.startMenu)
@@ -237,7 +267,7 @@ class DesktopIntegrationTest {
                 }
                 menuHelper.update(true, LiveBackgroundBlur.fallbackTint(50, false), 0f)
                 assertSnapshotTintOpacity(menuBackground, 50)
-                assertEquals(1f, activity.findViewById<View>(R.id.startMenuButton).alpha, 0f)
+                assertEquals(1f, activity.findViewById<View>(R.id.startMenu).alpha, 0f)
                 val taskbarBackground = activity.findViewById<android.widget.ImageView>(R.id.taskbarBackground)
                 repeat(4) { taskbarBackground.requestLayout() }
                 repeat(4) { menu.requestLayout(); menuBackground.requestLayout() }
@@ -263,6 +293,11 @@ class DesktopIntegrationTest {
                 assertEquals(1f, activity.findViewById<View>(R.id.taskbar).alpha, 0f)
             }
         }
+    }
+
+    private fun clickDesktopControl(description: Int) {
+        composeRule.onNode(hasContentDescription(context.getString(description), substring = true))
+            .performClick()
     }
 
     private fun assertSnapshotTintOpacity(image: android.widget.ImageView, opacity: Int) {
@@ -314,16 +349,16 @@ class DesktopIntegrationTest {
                 var captured = false
                 val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
                 while (!captured && System.nanoTime() < deadline) {
-                    scenario.onActivity { captured = image.drawable is android.graphics.drawable.BitmapDrawable }
+                    scenario.onActivity { captured = image.drawable is LayerDrawable }
                     if (!captured) Thread.sleep(50)
                 }
                 assertTrue("Legacy PixelCopy must produce a snapshot", captured)
                 scenario.onActivity {
                     assertEquals(1f, overlay.alpha, 0f)
                     assertEquals(1f, image.alpha, 0f)
-                    assertEquals(255, (image.foreground as android.graphics.drawable.ColorDrawable).alpha)
+                    assertSnapshotTintOpacity(image, 100)
                     helper.update(true, android.graphics.Color.TRANSPARENT, 0f)
-                    assertEquals(0, (image.foreground as android.graphics.drawable.ColorDrawable).alpha)
+                    assertSnapshotTintOpacity(image, 0)
                     helper.refresh()
                     helper.close() // An in-flight result must not reinstall the snapshot.
                 }

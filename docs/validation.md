@@ -13,10 +13,19 @@ Repeat on Android 12 and a recent Android version, with root and with Shizuku ru
 5. Pause/resume and destroy/recreate the Activity. Confirm task polling stops while paused and resources/listeners are cleaned on destruction. Window sessions are closed when the desktop Activity is destroyed; no process-death session recovery is promised.
 6. Switch taskbar display between app names and icons only with zero, one, and several tasks. Confirm names come from application labels, icons are centered in the taskbar app area, the active indicator moves when another task is selected, and long-press closes a task in icon-only mode.
 7. Tap the taskbar Wi-Fi button and confirm the system Wi-Fi panel opens; on devices without a panel, confirm Wi-Fi settings opens. Tap the battery button and confirm the battery/power overview opens, falling back to battery saver settings and then general Settings if unavailable.
+8. Open the Start menu from the taskbar, scroll the app list and grid, and launch an app from each. Check the device settings, Compound settings, files, and power actions. Verify that the power action is disabled while disconnected and that long-pressing Start opens setup.
+9. Check both overlays in light and dark mode, at narrow and wide workspace widths, and with keyboard or screen-reader navigation. Verify that Recents refreshes and scrolls the task list to the beginning. Tap the upper and lower portions of the clock to open Clock and Calendar respectively.
 
 ## Recorded results
 
 Results from the implementation run are recorded below before delivery. A build pass alone must not be described as an Android 12/root runtime pass.
+
+### Compose migration — 2026-11-13
+
+- Tested the Start menu with the existing View taskbar first. Opened both app layouts and Compound settings, and launched Settings on a virtual display.
+- With both Compose hosts active, manually opened setup from Start and minimized, restored, and closed Settings from the taskbar. Restore preserved the task and display IDs.
+- Debug APK, all 17 unit tests, lint, and the instrumentation APK build passed. Waydroid x86_64 / Android 13 / API 33 with Shizuku running as shell reported **OK (9 tests)**, including Compose taskbar semantics, snapshot blur, and privileged display and window lifecycle.
+- Android 12, recent Android, root/system-app mode, and live compositor blur remain unverified for this migration.
 
 ### Implementation run — 2026-11-09
 

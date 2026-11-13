@@ -50,4 +50,6 @@ Privileged and compositor behavior needs device testing in addition to unit test
 
 For device setup, focused instrumentation runs, log capture, and common failure diagnosis, see the [development guide](docs/development.md).
 
+The Start menu and taskbar render Jetpack Compose content in `ComposeView` hosts inside the existing desktop Activity. They share Compound’s day and night colors. The background images behind them handle snapshot blur.
+
 Window controls show a restore icon while maximized. In task-name mode, taskbar entries show distinct minimized and maximized state icons. Dark-mode changes preserve hosted sessions.

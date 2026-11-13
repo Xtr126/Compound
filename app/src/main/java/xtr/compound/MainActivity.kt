@@ -16,6 +16,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import xtr.compound.databinding.ActivityFullscreenBinding
 import xtr.compound.server.RemoteServiceHelper
@@ -31,7 +34,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var legacyMenuBlur: LegacyBackgroundBlur
     private lateinit var legacyTaskbarBlur: LegacyBackgroundBlur
     private lateinit var menuBlur: LiveBackgroundBlur
-    private lateinit var taskbar: RunningTasksAdapter
+    private var taskbarEntries by mutableStateOf(emptyList<TaskbarEntry>())
+    private var taskbarIconsOnly by mutableStateOf(false)
+    private var taskbarServiceStatus by mutableStateOf<String?>(null)
     private val handler = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor()
     private var service: IRemoteService? = null
@@ -42,8 +47,9 @@ class MainActivity : AppCompatActivity() {
     private var onboardingShown = false
     private var setupDialog: AlertDialog? = null
     private var taskErrorShown = false
+    private var startMenuPowerEnabled by mutableStateOf(false)
     private var windowCount = 0
-    private var activeTaskKey: String? = null
+    private var activeTaskKey by mutableStateOf<String?>(null)
     private var lastFocusedHostedKey: String? = null
     private val missingTasks = mutableMapOf<Int, Int>()
     private val stateListener = RemoteServiceHelper.StateListener { state -> onServiceState(state) }
@@ -65,35 +71,29 @@ class MainActivity : AppCompatActivity() {
         windows.setOnFocusedDisplayChanged { displayId ->
             val key = "display:$displayId"
             activeTaskKey = key
-            if (::taskbar.isInitialized) taskbar.setActiveEntry(key)
         }
         windows.setOnWindowsChanged(Runnable {
             val count = windows.getWindows().size
-            if (count > windowCount) binding.startMenu.root.visibility = View.INVISIBLE
+            if (count > windowCount) binding.startMenu.visibility = View.INVISIBLE
             windowCount = count
             renderTaskbar(); refreshTasks()
             if (::legacyTaskbarBlur.isInitialized) legacyTaskbarBlur.refresh()
         })
-        binding.startMenu.appsList.adapter = AppsGridAdapter(this, R.layout.app_list_item, windows)
-        binding.startMenu.appsGrid.adapter = AppsGridAdapter(this, R.layout.app_grid_item, windows)
-        taskbar = RunningTasksAdapter(this, ::focusEntry, ::closeEntry)
-        binding.taskbar.taskbarApps.adapter = taskbar
-        taskbar.setIconsOnly(appearance.taskbarIconsOnly)
-        binding.taskbar.root.visibility = View.VISIBLE
-        binding.taskbar.root.setBackgroundColor(Color.TRANSPARENT)
-        binding.startMenu.root.setCardBackgroundColor(Color.TRANSPARENT)
-        legacyTaskbarBlur = LegacyBackgroundBlur(binding.taskbarBackground, binding.taskbar.root, window)
-        legacyMenuBlur = LegacyBackgroundBlur(binding.startMenu.background, binding.startMenu.root, window)
+        taskbarIconsOnly = appearance.taskbarIconsOnly
+        binding.taskbar.visibility = View.VISIBLE
+        binding.taskbar.setBackgroundColor(Color.TRANSPARENT)
+        legacyTaskbarBlur = LegacyBackgroundBlur(binding.taskbarBackground, binding.taskbar, window)
+        legacyMenuBlur = LegacyBackgroundBlur(binding.background, binding.startMenu, window)
         // These surfaces are views in this Activity window, so a cross-window blur drawable has no
         // separate underlying window to sample. PixelCopy+RenderEffect captures the hosted desktop.
         taskbarBlur = LiveBackgroundBlur(
             binding.taskbarBackground, legacy = legacyTaskbarBlur, allowLiveBlur = false)
         menuBlur = LiveBackgroundBlur(
-            binding.startMenu.background, 40f, legacyMenuBlur, allowLiveBlur = false)
+            binding.background, 40f, legacyMenuBlur, allowLiveBlur = false)
         binding.taskbarBackground.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacyTaskbarBlur.refresh()
         }
-        binding.startMenu.background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+        binding.background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacyMenuBlur.refresh()
         }
         taskbarBlur.onAvailabilityChanged = { refreshAppearanceAvailability() }
@@ -101,76 +101,67 @@ class MainActivity : AppCompatActivity() {
         applyAppearance()
         binding.appsContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             val density = resources.displayMetrics.density
-            val compact = binding.root.width / density < 720
-            (binding.taskbar.wifiSettingsButton.parent as View).visibility = if (compact) View.GONE else View.VISIBLE
-            listOf(binding.taskbar.startMenuButton, binding.taskbar.backButton,
-                binding.taskbar.homeButton, binding.taskbar.recentsButton).forEachIndexed { index, button ->
-                val desired = ((if (index == 0) 60 else 48) * density).toInt()
-                if (button.layoutParams.width != desired) {
-                    button.layoutParams = button.layoutParams.apply { width = desired }
-                }
-            }
-            val params = binding.startMenu.root.layoutParams
+            val params = binding.startMenu.layoutParams
             val width = minOf((620 * density).toInt(), (binding.root.width - 20 * density).toInt()).coerceAtLeast(1)
             val height = minOf((580 * density).toInt(), (binding.appsContainer.height - 20 * density).toInt()).coerceAtLeast(1)
             if (params.width != width || params.height != height) {
                 params.width = width; params.height = height
-                binding.startMenu.root.layoutParams = params
+                binding.startMenu.layoutParams = params
             }
         }
-        setupActions()
+        binding.taskbar.setContent {
+            DesktopTheme {
+                TaskbarContent(
+                    entries = taskbarEntries,
+                    iconsOnly = taskbarIconsOnly,
+                    activeKey = activeTaskKey,
+                    serviceStatus = taskbarServiceStatus,
+                    onStart = {
+                        binding.startMenu.visibility = if (binding.startMenu.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+                        legacyMenuBlur.refresh()
+                    },
+                    onStartLongPress = ::showSetup,
+                    onBack = {
+                        val target = windows.getWindows().lastOrNull { !it.minimized }
+                        if (target == null) binding.startMenu.visibility = View.INVISIBLE
+                        else withService { remote ->
+                            remote.injectInputEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK), target.displayId)
+                            remote.injectInputEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK), target.displayId)
+                        }
+                    },
+                    onHome = { windows.minimizeAll(); binding.startMenu.visibility = View.INVISIBLE },
+                    onRecents = ::refreshTasks,
+                    onWifi = { launchSafely(Intent(Settings.Panel.ACTION_WIFI), Intent(Settings.ACTION_WIFI_SETTINGS)) },
+                    onBattery = { launchSafely(Intent(Intent.ACTION_POWER_USAGE_SUMMARY), Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS), Intent(Settings.ACTION_SETTINGS)) },
+                    onClock = { bottomHalf -> if (bottomHalf) openCalendar() else openClock() },
+                    onNotifications = { withService { it.expandNotificationsPanel() } },
+                    onFocus = ::focusEntry,
+                    onClose = ::closeEntry
+                )
+            }
+        }
+        binding.startMenuContent.setContent {
+            DesktopTheme {
+                StartMenuContent(
+                    windows = windows,
+                    powerEnabled = startMenuPowerEnabled,
+                    onSettings = { launchSafely(Intent(Settings.ACTION_SETTINGS)) },
+                    onCompoundSettings = {
+                        CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
+                            applyAppearance(); taskbarIconsOnly = appearance.taskbarIconsOnly; renderTaskbar(); refreshTasks()
+                        }, ::showSetup)
+                    },
+                    onFiles = {
+                        launchSafely(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE); type = "*/*"
+                        })
+                    },
+                    onPower = { withService { it.showPowerMenu() } }
+                )
+            }
+        }
         RemoteServiceHelper.addStateListener(stateListener)
         RemoteServiceHelper.initialize(applicationContext)
-    }
-
-    private fun setupActions() {
-        binding.taskbar.startMenuButton.imageTintList = binding.startMenu.powerButton.iconTint
-        binding.taskbar.startMenuButton.setOnClickListener {
-            binding.startMenu.root.visibility = if (binding.startMenu.root.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
-            legacyMenuBlur.refresh()
-        }
-        binding.taskbar.startMenuButton.setOnLongClickListener { showSetup(); true }
-        binding.startMenu.editButton.setOnClickListener {
-            CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
-                applyAppearance(); taskbar.setIconsOnly(appearance.taskbarIconsOnly); renderTaskbar(); refreshTasks()
-            }, ::showSetup)
-        }
-        binding.startMenu.settingsButton.setOnClickListener { launchSafely(Intent(Settings.ACTION_SETTINGS)) }
-        binding.startMenu.folderButton.setOnClickListener {
-            launchSafely(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE); type = "*/*"
-            })
-        }
-        binding.startMenu.powerButton.setOnClickListener { withService { it.showPowerMenu() } }
-        binding.taskbar.homeButton.setOnClickListener { windows.minimizeAll(); binding.startMenu.root.visibility = View.INVISIBLE }
-        binding.taskbar.backButton.setOnClickListener {
-            val target = windows.getWindows().lastOrNull { !it.minimized }
-            if (target == null) binding.startMenu.root.visibility = View.INVISIBLE
-            else withService { remote ->
-                remote.injectInputEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK), target.displayId)
-                remote.injectInputEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK), target.displayId)
-            }
-        }
-        binding.taskbar.recentsButton.setOnClickListener { refreshTasks(); binding.taskbar.taskbarApps.smoothScrollToPosition(0) }
-        binding.taskbar.wifiSettingsButton.setOnClickListener {
-            launchSafely(Intent(Settings.Panel.ACTION_WIFI), Intent(Settings.ACTION_WIFI_SETTINGS))
-        }
-        binding.taskbar.batterySettingsButton.setOnClickListener {
-            launchSafely(Intent(Intent.ACTION_POWER_USAGE_SUMMARY), Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS), Intent(Settings.ACTION_SETTINGS))
-        }
-        binding.taskbar.textClock.setOnClickListener { openClock() }
-        binding.taskbar.textClock.setOnTouchListener { view, event ->
-            when (event.action) {
-                android.view.MotionEvent.ACTION_UP -> {
-                    if (event.y < view.height / 2f) openClock() else openCalendar()
-                    true
-                }
-                android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE,
-                android.view.MotionEvent.ACTION_CANCEL -> true
-                else -> false
-            }
-        }
-        binding.taskbar.notificationsButton.setOnClickListener { withService { it.expandNotificationsPanel() } }
     }
 
     private fun openClock() {
@@ -195,8 +186,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun onServiceState(state: RemoteServiceHelper.State) {
         if (destroyed) return
-        binding.taskbar.startMenuButton.tooltipText = RemoteServiceHelper.getStatusMessage()
-        binding.startMenu.powerButton.isEnabled = state == RemoteServiceHelper.State.CONNECTED
+        taskbarServiceStatus = RemoteServiceHelper.getStatusMessage()
+        startMenuPowerEnabled = state == RemoteServiceHelper.State.CONNECTED
         if (state == RemoteServiceHelper.State.CONNECTED) {
             setupDialog?.dismiss()
             RemoteServiceHelper.getInstance(this) { connected ->
@@ -276,7 +267,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderTaskbar() {
-        if (!::taskbar.isInitialized) return
         val hosted = windows.getWindows()
         val entries = hosted.map { window ->
             TaskbarEntry("display:${window.displayId}", window.title.toString(), window.packageName,
@@ -294,19 +284,17 @@ class MainActivity : AppCompatActivity() {
             if (focusedHostedKey != null) activeTaskKey = focusedHostedKey
             else if (activeTaskKey?.startsWith("display:") == true) activeTaskKey = null
         }
-        taskbar.submit(entries)
         if (activeTaskKey == null || entries.none { it.key == activeTaskKey }) {
             activeTaskKey = focusedHostedKey ?: entries.firstOrNull { !it.minimized }?.key
         }
-        activeTaskKey?.let(taskbar::setActiveEntry)
+        taskbarEntries = entries
     }
 
     private fun focusEntry(entry: TaskbarEntry) {
         activeTaskKey = entry.key
-        taskbar.setActiveEntry(entry.key)
         if (entry.hosted) windows.focusDisplay(entry.displayId)
         else entry.taskId?.let { id -> withService { if (!it.focusTask(id)) error(getString(R.string.task_is_no_longer_available)) } }
-        binding.startMenu.root.visibility = View.INVISIBLE
+        binding.startMenu.visibility = View.INVISIBLE
     }
 
     private fun closeEntry(entry: TaskbarEntry) {
