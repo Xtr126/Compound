@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 package xtr.compound
 
 import android.app.Dialog
@@ -9,6 +10,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.LayerDrawable
 import android.view.View
+import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
 import androidx.activity.ComponentActivity
@@ -159,8 +161,21 @@ class DesktopIntegrationTest {
                 composeRule.onNode(hasText("Show all Android tasks")).assertDoesNotExist()
                 composeRule.onNode(hasText("Use system wallpaper")).performClick()
                 assertTrue(settings.useSystemWallpaper)
+                scenario.onActivity { activity ->
+                    assertTrue(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER != 0)
+                    val desktopRoot = activity.findViewById<View>(R.id.appsContainer).parent as View
+                    val background = desktopRoot.background as? android.graphics.drawable.ColorDrawable
+                    assertNotNull("System wallpaper mode should leave the Activity surface transparent", background)
+                    assertEquals(Color.TRANSPARENT, background!!.color)
+                }
                 composeRule.onNode(hasText("Use system wallpaper")).performClick()
                 assertFalse(settings.useSystemWallpaper)
+                scenario.onActivity { activity ->
+                    assertEquals(0, activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+                    val desktopRoot = activity.findViewById<View>(R.id.appsContainer).parent as View
+                    assertFalse("Bundled wallpaper should be restored when disabled",
+                        desktopRoot.background is android.graphics.drawable.ColorDrawable)
+                }
                 val opacity = composeRule.onNode(hasContentDescription("Background opacity, percent"))
                 val blur = composeRule.onNode(hasContentDescription("Background blur radius, dp"))
                 for (percent in listOf(100, 0)) {

@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 <resources>
     <!-- Base application theme. -->
     <style name="Theme.Compound" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
@@ -12,6 +13,7 @@
 
     <style name="Theme.Compound.Fullscreen" parent="Theme.Compound">
         <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
     </style>
 
 </resources>

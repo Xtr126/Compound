@@ -1,3 +1,4 @@
+/home/hp/.bash_profile: line 6: /home/hp/.cargo/env: No such file or directory
 package xtr.compound
 
 import android.content.Intent
@@ -9,7 +10,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.app.WallpaperManager
 import android.provider.AlarmClock
 import android.view.KeyEvent
 import android.view.View
@@ -57,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     private val wallpaperChangedReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: Intent?) {
             applyDesktopWallpaper(forceRefresh = true)
+            if (::legacyTaskbarBlur.isInitialized) legacyTaskbarBlur.refresh()
+            if (::legacyMenuBlur.isInitialized) legacyMenuBlur.refresh()
         }
     }
     private var activeTaskKey by mutableStateOf<String?>(null)
@@ -206,11 +208,17 @@ class MainActivity : AppCompatActivity() {
         val useSystemWallpaper = appearance.useSystemWallpaper
         if (!forceRefresh && appliedSystemWallpaper == useSystemWallpaper) return
 
-        binding.root.setBackgroundResource(R.drawable.wallpaper)
         if (useSystemWallpaper) {
-            runCatching { WallpaperManager.getInstance(this).drawable }
-                .getOrNull()
-                ?.let { binding.root.background = it }
+            binding.root.setBackgroundColor(Color.TRANSPARENT)
+            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val attributes = window.attributes
+                attributes.setWallpaperTouchEventsEnabled(false)
+                window.attributes = attributes
+            }
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+            binding.root.setBackgroundResource(R.drawable.wallpaper)
         }
         appliedSystemWallpaper = useSystemWallpaper
     }
