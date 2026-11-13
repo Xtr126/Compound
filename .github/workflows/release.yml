@@ -22,7 +22,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: true
+          cache: gradle
       - uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools platforms;android-37.0 build-tools;36.0.0'
