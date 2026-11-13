@@ -19,6 +19,34 @@ class DesktopWindowStateTest {
         assertEquals(4.0f, AppearanceSettings.quantizeDensityMultiplier(8f), 0f)
     }
 
+    @Test fun largeLauncherDensityLetsStartMenuOverlapTaskbarToKeepRoomForControls() {
+        val bounds = LauncherMenuGeometry.calculate(
+            rootHeightPx = 360,
+            workspaceHeightPx = 120,
+            baseDensity = 1f,
+            densityScale = 4f,
+            requestedHeightDp = 580
+        )
+
+        assertTrue(bounds.overlapsTaskbar)
+        assertEquals(350, bounds.heightPx)
+        assertEquals(10, bounds.bottomMarginPx)
+    }
+
+    @Test fun normalLauncherDensityKeepsStartMenuAboveTaskbar() {
+        val bounds = LauncherMenuGeometry.calculate(
+            rootHeightPx = 800,
+            workspaceHeightPx = 740,
+            baseDensity = 1f,
+            densityScale = 1f,
+            requestedHeightDp = 580
+        )
+
+        assertFalse(bounds.overlapsTaskbar)
+        assertEquals(580, bounds.heightPx)
+        assertEquals(10, bounds.bottomMarginPx)
+    }
+
     @Test fun bottomRightCornerResizeChangesBothDimensionsWithinDesktop() {
         val bounds = WindowResizeGeometry.resize(
             TouchToResizeListener.BOTTOM_RIGHT,

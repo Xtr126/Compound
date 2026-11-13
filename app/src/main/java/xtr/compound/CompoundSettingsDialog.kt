@@ -115,6 +115,7 @@ object CompoundSettingsDialog {
                             onDeviceSettings = onDeviceSettings,
                             onReset = {
                                 settings.resetAppearance()
+                                launcherDensityMultiplier = settings.launcherDensityMultiplier
                                 resetVersion++
                                 applyChanges()
                             },

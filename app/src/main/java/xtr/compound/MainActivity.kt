@@ -17,6 +17,7 @@ import android.widget.ImageView
 import android.widget.FrameLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.net.toUri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -107,7 +108,6 @@ class MainActivity : AppCompatActivity() {
         createStartMenuResizeHandle()
         applyAppearance()
         binding.appsContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            applyStartMenuSize()
             applyLauncherHostDensity()
         }
         binding.taskbar.setContent {
@@ -266,24 +266,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun startMenuResizeBounds(): Pair<Int, Int> {
         val density = effectiveLauncherDensity()
+        val baseDensity = resources.displayMetrics.density
+        val scale = AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
+        val maxMenuHeight = LauncherMenuGeometry.calculate(
+            rootHeightPx = binding.root.height,
+            workspaceHeightPx = binding.appsContainer.height,
+            baseDensity = baseDensity,
+            densityScale = scale,
+            requestedHeightDp = AppearanceSettings.MAX_START_MENU_SIZE_DP
+        ).heightPx
         return Pair(
             (binding.root.width - 20 * density).toInt().coerceAtLeast(1),
-            (binding.appsContainer.height - 20 * density).toInt().coerceAtLeast(1)
+            maxMenuHeight
         )
-    }
-
-    private fun applyStartMenuSize() {
-        if (binding.root.width <= 0 || binding.appsContainer.height <= 0) return
-        val density = effectiveLauncherDensity()
-        val bounds = startMenuResizeBounds()
-        val width = (appearance.startMenuWidthDp * density).toInt().coerceAtMost(bounds.first)
-        val height = (appearance.startMenuHeightDp * density).toInt().coerceAtMost(bounds.second)
-        val params = binding.startMenu.layoutParams
-        if (params.width != width || params.height != height) {
-            params.width = width
-            params.height = height
-            binding.startMenu.layoutParams = params
-        }
     }
 
     /** Applies local launcher density to Compose and the pixel-sized Android containers. */
@@ -307,16 +302,43 @@ class MainActivity : AppCompatActivity() {
                 startMenuResizeHandle.layoutParams = handleParams
             }
         }
-        if (binding.root.width <= 0 || binding.appsContainer.height <= 0) return
-        val params = binding.startMenu.layoutParams as? android.view.ViewGroup.MarginLayoutParams ?: return
-        val left = (10 * density).toInt()
-        val bottom = (10 * density).toInt()
-        if (params.leftMargin != left || params.bottomMargin != bottom) {
-            params.leftMargin = left
-            params.bottomMargin = bottom
+        val rootWidth = binding.root.width
+        val workspaceHeight = binding.appsContainer.height
+        if (rootWidth <= 0 || workspaceHeight <= 0) return
+        val baseDensity = resources.displayMetrics.density
+        val scale = AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
+        val horizontalMargin = (20 * density).toInt()
+        val width = minOf((appearance.startMenuWidthDp * density).toInt(), (rootWidth - horizontalMargin).coerceAtLeast(1))
+        val menuBounds = LauncherMenuGeometry.calculate(
+            rootHeightPx = binding.root.height,
+            workspaceHeightPx = workspaceHeight,
+            baseDensity = baseDensity,
+            densityScale = scale,
+            requestedHeightDp = appearance.startMenuHeightDp
+        )
+        val height = menuBounds.heightPx
+        val params = binding.startMenu.layoutParams as? ConstraintLayout.LayoutParams ?: return
+        val margins = params as? android.view.ViewGroup.MarginLayoutParams
+        var marginsChanged = false
+        if (margins != null) {
+            val left = (10 * density).toInt()
+            val bottom = menuBounds.bottomMarginPx
+            marginsChanged = margins.leftMargin != left || margins.bottomMargin != bottom
+            margins.leftMargin = left
+            margins.bottomMargin = bottom
+        }
+        val oldBottomToTop = params.bottomToTop
+        val oldBottomToBottom = params.bottomToBottom
+        params.bottomToTop = if (menuBounds.overlapsTaskbar) ConstraintLayout.LayoutParams.UNSET else R.id.taskbar
+        params.bottomToBottom = if (menuBounds.overlapsTaskbar) ConstraintLayout.LayoutParams.PARENT_ID else ConstraintLayout.LayoutParams.UNSET
+        binding.startMenu.translationZ = if (menuBounds.overlapsTaskbar) 10f * baseDensity else 0f
+        if (params.width != width || params.height != height || marginsChanged) {
+            params.width = width
+            params.height = height
+            binding.startMenu.layoutParams = params
+        } else if (params.bottomToTop != oldBottomToTop || params.bottomToBottom != oldBottomToBottom) {
             binding.startMenu.layoutParams = params
         }
-        applyStartMenuSize()
     }
 
     private fun effectiveLauncherDensity(): Float = resources.displayMetrics.density *
