@@ -28,6 +28,7 @@ class LegacyBackgroundBlur(
     private var snapshotLayers: LayerDrawable? = null
     private var tintLayer: ColorDrawable? = null
     private var capturing = false
+    private var refreshPending = false
     private var closed = false
     private var enabled = false
     private var generation = 0
@@ -57,8 +58,13 @@ class LegacyBackgroundBlur(
 
     /** Refresh when opening the menu or after geometry changes, without a capture loop. */
     fun refresh() {
-        if (closed || !enabled || capturing || !image.isAttachedToWindow || image.width <= 0 ||
+        if (closed || !enabled || !image.isAttachedToWindow || image.width <= 0 ||
             image.height <= 0 || overlay.visibility != View.VISIBLE) return
+        if (capturing) {
+            refreshPending = true
+            return
+        }
+        refreshPending = false
         capturing = true
         val ticket = ++generation
         if (hideOverlay) {
@@ -109,12 +115,15 @@ class LegacyBackgroundBlur(
     }
 
     private fun cancelCapture() {
+        val refreshAgain = refreshPending
+        refreshPending = false
         generation++
         capturing = false
         captureFrame?.let(image::removeCallbacks)
         captureFrame = null
         handler.removeCallbacks(captureTimeout)
         restoreOverlay()
+        if (refreshAgain) handler.post { refresh() }
     }
 
     private fun applySnapshot() {
