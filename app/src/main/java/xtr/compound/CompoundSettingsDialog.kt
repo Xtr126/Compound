@@ -92,6 +92,7 @@ object CompoundSettingsDialog {
         var dialogBlur: LiveBackgroundBlur? = null
         var availabilityMessageVisible by mutableStateOf(false)
         var resetVersion by mutableIntStateOf(0)
+        var launcherDensityMultiplier by mutableFloatStateOf(settings.launcherDensityMultiplier)
 
         fun applyChanges() {
             onChanged()
@@ -101,13 +102,14 @@ object CompoundSettingsDialog {
         lateinit var dialog: AlertDialog
         val content = ComposeView(activity).apply {
             setContent {
-                DesktopTheme {
+                DesktopTheme(launcherDensityMultiplier) {
                     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
                         SettingsPage(
                             section = section,
                             settings = settings,
                             availabilityMessageVisible = availabilityMessageVisible,
                             resetVersion = resetVersion,
+                            onLauncherDensityMultiplierChanged = { launcherDensityMultiplier = it },
                             onChanged = ::applyChanges,
                             onSetup = onSetup,
                             onDeviceSettings = onDeviceSettings,
@@ -185,7 +187,8 @@ private fun SettingsPage(
     onDeviceSettings: () -> Unit,
     onReset: () -> Unit,
     onClose: () -> Unit,
-    resetVersion: Int
+    resetVersion: Int,
+    onLauncherDensityMultiplierChanged: (Float) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -198,7 +201,7 @@ private fun SettingsPage(
         if (section == CompoundSettingsDialog.Section.APPEARANCE) {
             AppearancePage(settings, availabilityMessageVisible, onChanged, resetVersion)
         } else {
-            ConfigurePage(settings, onChanged, onDeviceSettings, onSetup)
+            ConfigurePage(settings, onChanged, onDeviceSettings, onSetup, onLauncherDensityMultiplierChanged)
         }
         Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
             if (section == CompoundSettingsDialog.Section.APPEARANCE) {
@@ -292,10 +295,13 @@ private fun ConfigurePage(
     settings: AppearanceSettings,
     onChanged: () -> Unit,
     onDeviceSettings: () -> Unit,
-    onSetup: () -> Unit
+    onSetup: () -> Unit,
+    onLauncherDensityMultiplierChanged: (Float) -> Unit
 ) {
     var showAllTasks by remember(settings) { mutableStateOf(settings.showAllTasks) }
     var iconsOnly by remember(settings) { mutableStateOf(settings.taskbarIconsOnly) }
+    var launcherDensity by remember(settings) { mutableFloatStateOf(settings.launcherDensityMultiplier) }
+    var appWindowDensity by remember(settings) { mutableFloatStateOf(settings.appWindowDensityMultiplier) }
 
     SettingSwitch(
         label = stringResource(R.string.show_all_android_tasks),
@@ -304,6 +310,27 @@ private fun ConfigurePage(
         onCheckedChange = {
             showAllTasks = it
             settings.showAllTasks = it
+            onChanged()
+        }
+    )
+    DensitySlider(
+        label = stringResource(R.string.launcher_density),
+        semanticsLabel = stringResource(R.string.launcher_density_semantics),
+        value = launcherDensity,
+        onValueChange = { value ->
+            launcherDensity = value
+            settings.launcherDensityMultiplier = value
+            onLauncherDensityMultiplierChanged(value)
+            onChanged()
+        }
+    )
+    DensitySlider(
+        label = stringResource(R.string.app_window_density),
+        semanticsLabel = stringResource(R.string.app_window_density_semantics),
+        value = appWindowDensity,
+        onValueChange = { value ->
+            appWindowDensity = value
+            settings.appWindowDensityMultiplier = value
             onChanged()
         }
     )
@@ -326,6 +353,28 @@ private fun ConfigurePage(
             Text(stringResource(R.string.shizuku_setup))
         }
     }
+}
+
+@Composable
+private fun DensitySlider(
+    label: String,
+    semanticsLabel: String,
+    value: Float,
+    onValueChange: (Float) -> Unit
+) {
+    Text(label, style = MaterialTheme.typography.titleSmall)
+    val valueText = stringResource(R.string.density_multiplier_value, value)
+    val valueDescription = stringResource(R.string.density_multiplier_description, label, value)
+    Slider(
+        value = value,
+        onValueChange = { raw ->
+            onValueChange(AppearanceSettings.quantizeDensityMultiplier(raw))
+        },
+        valueRange = AppearanceSettings.MIN_DENSITY_MULTIPLIER..AppearanceSettings.MAX_DENSITY_MULTIPLIER,
+        steps = 38,
+        modifier = Modifier.semantics { contentDescription = semanticsLabel }
+    )
+    Text(valueText, modifier = Modifier.semantics { contentDescription = valueDescription })
 }
 
 @Composable

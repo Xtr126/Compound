@@ -4,6 +4,21 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DesktopWindowStateTest {
+    @Test fun densityMultiplierUsesBaseDpiAndClampsToSupportedRange() {
+        assertEquals(420, DisplayDensity.dpi(420, 1.0f))
+        assertEquals(42, DisplayDensity.dpi(420, 0.1f))
+        assertEquals(1680, DisplayDensity.dpi(420, 4.0f))
+        assertEquals(1, DisplayDensity.dpi(0, 0.1f))
+        assertEquals(1680, DisplayDensity.dpi(420, 10f))
+    }
+
+    @Test fun densityMultipliersAreQuantizedToTenths() {
+        assertEquals(1.0f, AppearanceSettings.quantizeDensityMultiplier(1.04f), 0f)
+        assertEquals(1.1f, AppearanceSettings.quantizeDensityMultiplier(1.06f), 0f)
+        assertEquals(0.1f, AppearanceSettings.quantizeDensityMultiplier(0f), 0f)
+        assertEquals(4.0f, AppearanceSettings.quantizeDensityMultiplier(8f), 0f)
+    }
+
     @Test fun bottomRightCornerResizeChangesBothDimensionsWithinDesktop() {
         val bounds = WindowResizeGeometry.resize(
             TouchToResizeListener.BOTTOM_RIGHT,

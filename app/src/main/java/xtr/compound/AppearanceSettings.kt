@@ -36,6 +36,18 @@ class AppearanceSettings(context: Context) {
     var startMenuHeightDp: Int
         get() = preferences.getInt(KEY_START_MENU_HEIGHT_DP, DEFAULT_START_MENU_HEIGHT_DP).coerceIn(MIN_START_MENU_HEIGHT_DP, MAX_START_MENU_SIZE_DP)
         set(value) { preferences.edit().putInt(KEY_START_MENU_HEIGHT_DP, value.coerceIn(MIN_START_MENU_HEIGHT_DP, MAX_START_MENU_SIZE_DP)).apply() }
+    /** Density multiplier for Compound's own Compose desktop UI, without changing device density. */
+    var launcherDensityMultiplier: Float
+        get() = readDensityMultiplier(KEY_LAUNCHER_DENSITY_MULTIPLIER)
+        set(value) { preferences.edit().putFloat(KEY_LAUNCHER_DENSITY_MULTIPLIER, quantizeDensityMultiplier(value)).apply() }
+
+    /** Density multiplier used for the virtual displays that host app windows. */
+    var appWindowDensityMultiplier: Float
+        get() = readDensityMultiplier(KEY_APP_WINDOW_DENSITY_MULTIPLIER)
+        set(value) { preferences.edit().putFloat(KEY_APP_WINDOW_DENSITY_MULTIPLIER, quantizeDensityMultiplier(value)).apply() }
+
+    private fun readDensityMultiplier(key: String): Float =
+        quantizeDensityMultiplier(preferences.getFloat(key, DEFAULT_DENSITY_MULTIPLIER))
 
     fun resetAppearance() {
         preferences.edit()
@@ -44,6 +56,8 @@ class AppearanceSettings(context: Context) {
             .putBoolean(KEY_START_MENU_RESIZE_ENABLED, DEFAULT_START_MENU_RESIZE_ENABLED)
             .putInt(KEY_START_MENU_WIDTH_DP, DEFAULT_START_MENU_WIDTH_DP)
             .putInt(KEY_START_MENU_HEIGHT_DP, DEFAULT_START_MENU_HEIGHT_DP)
+            .putFloat(KEY_LAUNCHER_DENSITY_MULTIPLIER, DEFAULT_DENSITY_MULTIPLIER)
+            .putFloat(KEY_APP_WINDOW_DENSITY_MULTIPLIER, DEFAULT_DENSITY_MULTIPLIER)
             .apply()
     }
 
@@ -58,6 +72,12 @@ class AppearanceSettings(context: Context) {
         const val MIN_START_MENU_WIDTH_DP = 320
         const val MIN_START_MENU_HEIGHT_DP = 280
         const val MAX_START_MENU_SIZE_DP = 4096
+        const val DEFAULT_DENSITY_MULTIPLIER = 1.0f
+        const val MIN_DENSITY_MULTIPLIER = 0.1f
+        const val MAX_DENSITY_MULTIPLIER = 4.0f
+
+        fun quantizeDensityMultiplier(value: Float): Float =
+            (kotlin.math.round(value.coerceIn(MIN_DENSITY_MULTIPLIER, MAX_DENSITY_MULTIPLIER) * 10f) / 10f)
         private const val PREFS_NAME = "appearance_settings"
         private const val KEY_OPACITY = "opacity_percent"
         private const val KEY_BLUR_RADIUS = "blur_radius_dp"
@@ -66,5 +86,7 @@ class AppearanceSettings(context: Context) {
         private const val KEY_START_MENU_RESIZE_ENABLED = "start_menu_resize_enabled"
         private const val KEY_START_MENU_WIDTH_DP = "start_menu_width_dp"
         private const val KEY_START_MENU_HEIGHT_DP = "start_menu_height_dp"
+        private const val KEY_LAUNCHER_DENSITY_MULTIPLIER = "launcher_density_multiplier"
+        private const val KEY_APP_WINDOW_DENSITY_MULTIPLIER = "app_window_density_multiplier"
     }
 }

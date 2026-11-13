@@ -11,13 +11,15 @@ import java.util.concurrent.Executor
 class VirtualDisplayHelper private constructor(
     private val service: IRemoteService,
     val displayId: Int,
-    private var width: Int,
-    private var height: Int,
-    private val dpi: Int,
+    @Volatile private var width: Int,
+    @Volatile private var height: Int,
+    private val baseDisplayDpi: Int,
+    densityMultiplier: Float,
     private val executor: Executor
 ) : View.OnTouchListener, View.OnGenericMotionListener, View.OnKeyListener {
     private var inputTransformer = InputTransformer(width, height)
-    private var closed = false
+    @Volatile private var densityMultiplier = AppearanceSettings.quantizeDensityMultiplier(densityMultiplier)
+    @Volatile private var closed = false
 
     fun attachSurface(surface: Surface) {
         if (closed || displayId < 0) return
@@ -49,8 +51,28 @@ class VirtualDisplayHelper private constructor(
         width = newWidth.coerceAtLeast(1)
         height = newHeight.coerceAtLeast(1)
         inputTransformer.updateViewSize(width, height)
-        if (!closed && displayId >= 0) try {
-            executor.execute { if (!closed) runCatching { service.resizeVirtualDisplay(displayId, width, height, dpi) } }
+        resizeRemoteDisplay()
+    }
+
+    /** Applies the current app-window density setting to this existing display. */
+    fun setDensityMultiplier(multiplier: Float) {
+        val quantized = AppearanceSettings.quantizeDensityMultiplier(multiplier)
+        if (densityMultiplier == quantized) return
+        densityMultiplier = quantized
+        resizeRemoteDisplay()
+    }
+
+    private fun resizeRemoteDisplay() {
+        if (closed || displayId < 0) return
+        val currentWidth = width
+        val currentHeight = height
+        val currentDpi = DisplayDensity.dpi(baseDisplayDpi, densityMultiplier)
+        try {
+            executor.execute {
+                if (!closed) runCatching {
+                    service.resizeVirtualDisplay(displayId, currentWidth, currentHeight, currentDpi)
+                }
+            }
         } catch (_: java.util.concurrent.RejectedExecutionException) { }
     }
 
@@ -89,12 +111,14 @@ class VirtualDisplayHelper private constructor(
             height: Int,
             surface: Surface,
             launchIntent: android.content.Intent,
-            executor: Executor
+            executor: Executor,
+            densityMultiplier: Float = AppearanceSettings.DEFAULT_DENSITY_MULTIPLIER
         ): VirtualDisplayHelper {
-            val dpi = service.getBaseDisplayDensity(Display.DEFAULT_DISPLAY)
+            val baseDpi = service.getBaseDisplayDensity(Display.DEFAULT_DISPLAY)
+            val dpi = DisplayDensity.dpi(baseDpi, densityMultiplier)
             val id = service.renderAppToSurface(launchIntent, surface, width.coerceAtLeast(1), height.coerceAtLeast(1), dpi)
             require(id > 0) { "Could not create virtual display" }
-            return VirtualDisplayHelper(service, id, width, height, dpi, executor)
+            return VirtualDisplayHelper(service, id, width, height, baseDpi, densityMultiplier, executor)
         }
     }
 }

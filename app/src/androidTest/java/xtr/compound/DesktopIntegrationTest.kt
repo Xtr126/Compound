@@ -67,6 +67,8 @@ class DesktopIntegrationTest {
             assertFalse(settings.startMenuResizeEnabled)
             assertEquals(AppearanceSettings.DEFAULT_START_MENU_WIDTH_DP, settings.startMenuWidthDp)
             assertEquals(AppearanceSettings.DEFAULT_START_MENU_HEIGHT_DP, settings.startMenuHeightDp)
+            assertEquals(AppearanceSettings.DEFAULT_DENSITY_MULTIPLIER, settings.launcherDensityMultiplier)
+            assertEquals(AppearanceSettings.DEFAULT_DENSITY_MULTIPLIER, settings.appWindowDensityMultiplier)
             settings.opacityPercent = -10
             settings.blurRadiusDp = 120
             settings.showAllTasks = true
@@ -100,6 +102,7 @@ class DesktopIntegrationTest {
                 is Int -> edit.putInt(key, value)
                 is Boolean -> edit.putBoolean(key, value)
                 is String -> edit.putString(key, value)
+                is Float -> edit.putFloat(key, value)
             } }
             edit.commit()
         }
@@ -219,9 +222,13 @@ class DesktopIntegrationTest {
         val settings = AppearanceSettings(context)
         val oldScope = settings.showAllTasks
         val oldIconsOnly = settings.taskbarIconsOnly
+        val oldLauncherDensity = settings.launcherDensityMultiplier
+        val oldAppWindowDensity = settings.appWindowDensityMultiplier
         try {
             settings.showAllTasks = false
             settings.taskbarIconsOnly = false
+            settings.launcherDensityMultiplier = 1.0f
+            settings.appWindowDensityMultiplier = 1.0f
             ActivityScenario.launch(MainActivity::class.java).use {
                 clickDesktopControl(R.string.open_start_menu)
                 clickDesktopControl(R.string.configure_settings)
@@ -230,15 +237,47 @@ class DesktopIntegrationTest {
                 assertTrue(settings.showAllTasks)
                 composeRule.onNode(hasText("Show taskbar icons only")).performClick()
                 assertTrue(settings.taskbarIconsOnly)
+                val launcherDensity = composeRule.onNode(
+                    hasContentDescription("Launcher density multiplier, from 0.1x to 4.0x")
+                )
+                launcherDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(0.1f) }
+                assertEquals(0.1f, settings.launcherDensityMultiplier, 0f)
+                launcherDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(4.0f) }
+                assertEquals(4.0f, settings.launcherDensityMultiplier, 0f)
+                val appDensity = composeRule.onNode(
+                    hasContentDescription("Virtual display density multiplier, from 0.1x to 4.0x")
+                )
+                appDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(0.1f) }
+                assertEquals(0.1f, settings.appWindowDensityMultiplier, 0f)
+                appDensity.performSemanticsAction(SemanticsActions.SetProgress) { it(4.0f) }
+                assertEquals(4.0f, settings.appWindowDensityMultiplier, 0f)
+                it.onActivity { activity ->
+                    assertEquals(
+                        "The Compound launcher slider must not change Android's activity display density",
+                        activity.resources.displayMetrics.densityDpi,
+                        context.resources.displayMetrics.densityDpi
+                    )
+                }
                 composeRule.onNode(hasText("Close")).performClick()
                 clickDesktopControl(R.string.configure_settings)
                 composeRule.onNode(hasText("Show all Android tasks")).assertIsOn()
+                composeRule.onNode(hasContentDescription("Launcher density: 4.0 times the default display density"))
+                    .assertExists()
+                composeRule.onNode(hasContentDescription("App window density: 4.0 times the default display density"))
+                    .assertExists()
+                composeRule.onNode(hasContentDescription("Launcher density multiplier, from 0.1x to 4.0x"))
+                    .performSemanticsAction(SemanticsActions.SetProgress) { it(1.0f) }
+                composeRule.waitForIdle()
                 composeRule.onNode(hasText("Show taskbar icons only")).assertIsOn().performClick()
                 assertFalse(settings.taskbarIconsOnly)
+                composeRule.onNode(hasContentDescription("Virtual display density multiplier, from 0.1x to 4.0x"))
+                    .assertExists()
             }
         } finally {
             settings.showAllTasks = oldScope
             settings.taskbarIconsOnly = oldIconsOnly
+            settings.launcherDensityMultiplier = oldLauncherDensity
+            settings.appWindowDensityMultiplier = oldAppWindowDensity
         }
     }
 
