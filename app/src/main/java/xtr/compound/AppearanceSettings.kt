@@ -24,10 +24,16 @@ class AppearanceSettings(context: Context) {
         get() = preferences.getBoolean(KEY_TASKBAR_ICONS_ONLY, DEFAULT_TASKBAR_ICONS_ONLY)
         set(value) { preferences.edit().putBoolean(KEY_TASKBAR_ICONS_ONLY, value).apply() }
 
+    /** Use Android's current wallpaper behind the desktop instead of Compound's bundled image. */
+    var useSystemWallpaper: Boolean
+        get() = preferences.getBoolean(KEY_USE_SYSTEM_WALLPAPER, DEFAULT_USE_SYSTEM_WALLPAPER)
+        set(value) { preferences.edit().putBoolean(KEY_USE_SYSTEM_WALLPAPER, value).apply() }
+
     fun resetAppearance() {
         preferences.edit()
             .putInt(KEY_OPACITY, DEFAULT_OPACITY)
             .putInt(KEY_BLUR_RADIUS, DEFAULT_BLUR_RADIUS)
+            .putBoolean(KEY_USE_SYSTEM_WALLPAPER, DEFAULT_USE_SYSTEM_WALLPAPER)
             .apply()
     }
 
@@ -36,10 +42,12 @@ class AppearanceSettings(context: Context) {
         const val DEFAULT_BLUR_RADIUS = 25
         const val DEFAULT_ALL_TASKS = false
         const val DEFAULT_TASKBAR_ICONS_ONLY = false
+        const val DEFAULT_USE_SYSTEM_WALLPAPER = false
         private const val PREFS_NAME = "appearance_settings"
         private const val KEY_OPACITY = "opacity_percent"
         private const val KEY_BLUR_RADIUS = "blur_radius_dp"
         private const val KEY_ALL_TASKS = "show_all_tasks"
         private const val KEY_TASKBAR_ICONS_ONLY = "taskbar_icons_only"
+        private const val KEY_USE_SYSTEM_WALLPAPER = "use_system_wallpaper"
     }
 }

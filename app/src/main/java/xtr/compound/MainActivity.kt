@@ -2,11 +2,14 @@ package xtr.compound
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.app.WallpaperManager
 import android.provider.AlarmClock
 import android.view.KeyEvent
 import android.view.View
@@ -49,6 +52,13 @@ class MainActivity : AppCompatActivity() {
     private var taskErrorShown = false
     private var startMenuPowerEnabled by mutableStateOf(false)
     private var windowCount = 0
+    private var wallpaperReceiverRegistered = false
+    private var appliedSystemWallpaper: Boolean? = null
+    private val wallpaperChangedReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: Intent?) {
+            applyDesktopWallpaper(forceRefresh = true)
+        }
+    }
     private var activeTaskKey by mutableStateOf<String?>(null)
     private var lastFocusedHostedKey: String? = null
     private val missingTasks = mutableMapOf<Int, Int>()
@@ -189,6 +199,33 @@ class MainActivity : AppCompatActivity() {
     private fun applyAppearance() {
         taskbarBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
         menuBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
+        applyDesktopWallpaper()
+    }
+
+    private fun applyDesktopWallpaper(forceRefresh: Boolean = false) {
+        val useSystemWallpaper = appearance.useSystemWallpaper
+        if (!forceRefresh && appliedSystemWallpaper == useSystemWallpaper) return
+
+        binding.root.setBackgroundResource(R.drawable.wallpaper)
+        if (useSystemWallpaper) {
+            runCatching { WallpaperManager.getInstance(this).drawable }
+                .getOrNull()
+                ?.let { binding.root.background = it }
+        }
+        appliedSystemWallpaper = useSystemWallpaper
+    }
+
+    @Suppress("DEPRECATION") // Android continues to broadcast this action when wallpaper changes.
+    private fun registerWallpaperReceiver() {
+        if (wallpaperReceiverRegistered) return
+        val filter = IntentFilter(Intent.ACTION_WALLPAPER_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(wallpaperChangedReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            registerReceiver(wallpaperChangedReceiver, filter)
+        }
+        wallpaperReceiverRegistered = true
     }
 
     private fun onServiceState(state: RemoteServiceHelper.State) {
@@ -329,13 +366,23 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        registerWallpaperReceiver()
+        applyDesktopWallpaper(forceRefresh = true)
         resumed = true
         supportActionBar?.hide()
         binding.root.windowInsetsController?.hide(WindowInsets.Type.systemBars())
         handler.removeCallbacks(poll); handler.post(poll)
         RemoteServiceHelper.initialize(applicationContext)
     }
-    override fun onPause() { resumed = false; handler.removeCallbacks(poll); super.onPause() }
+    override fun onPause() {
+        resumed = false
+        handler.removeCallbacks(poll)
+        if (wallpaperReceiverRegistered) {
+            unregisterReceiver(wallpaperChangedReceiver)
+            wallpaperReceiverRegistered = false
+        }
+        super.onPause()
+    }
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         if (!destroyed && ::taskbarBlur.isInitialized) {

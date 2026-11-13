@@ -51,20 +51,24 @@ class DesktopIntegrationTest {
             assertEquals(25, settings.blurRadiusDp)
             assertFalse(settings.showAllTasks)
             assertFalse(settings.taskbarIconsOnly)
+            assertFalse(settings.useSystemWallpaper)
             settings.opacityPercent = -10
             settings.blurRadiusDp = 120
             settings.showAllTasks = true
             settings.taskbarIconsOnly = true
+            settings.useSystemWallpaper = true
             val reopened = AppearanceSettings(context)
             assertEquals(0, reopened.opacityPercent)
             assertEquals(100, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue(reopened.taskbarIconsOnly)
+            assertTrue(reopened.useSystemWallpaper)
             settings.resetAppearance()
             assertEquals(80, reopened.opacityPercent)
             assertEquals(25, reopened.blurRadiusDp)
             assertTrue(reopened.showAllTasks)
             assertTrue("Reset appearance must preserve taskbar presentation", reopened.taskbarIconsOnly)
+            assertFalse("Reset appearance restores the bundled wallpaper", reopened.useSystemWallpaper)
         } finally {
             val edit = prefs.edit().clear()
             old.forEach { (key, value) -> when (value) {
@@ -142,8 +146,10 @@ class DesktopIntegrationTest {
         val oldOpacity = settings.opacityPercent
         val oldBlur = settings.blurRadiusDp
         val oldScope = settings.showAllTasks
+        val oldSystemWallpaper = settings.useSystemWallpaper
         try {
             settings.showAllTasks = true
+            settings.useSystemWallpaper = false
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 scenario.onActivity { activity ->
                     activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -151,6 +157,10 @@ class DesktopIntegrationTest {
                 clickDesktopControl(R.string.open_start_menu)
                 clickDesktopControl(R.string.appearance_settings)
                 composeRule.onNode(hasText("Show all Android tasks")).assertDoesNotExist()
+                composeRule.onNode(hasText("Use system wallpaper")).performClick()
+                assertTrue(settings.useSystemWallpaper)
+                composeRule.onNode(hasText("Use system wallpaper")).performClick()
+                assertFalse(settings.useSystemWallpaper)
                 val opacity = composeRule.onNode(hasContentDescription("Background opacity, percent"))
                 val blur = composeRule.onNode(hasContentDescription("Background blur radius, dp"))
                 for (percent in listOf(100, 0)) {
@@ -183,6 +193,7 @@ class DesktopIntegrationTest {
             settings.opacityPercent = oldOpacity
             settings.blurRadiusDp = oldBlur
             settings.showAllTasks = oldScope
+            settings.useSystemWallpaper = oldSystemWallpaper
         }
     }
 

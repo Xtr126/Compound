@@ -218,6 +218,18 @@ private fun AppearancePage(
 ) {
     var opacity by remember(settings, resetVersion) { mutableFloatStateOf(settings.opacityPercent.toFloat()) }
     var radius by remember(settings, resetVersion) { mutableFloatStateOf(settings.blurRadiusDp.toFloat()) }
+    var useSystemWallpaper by remember(settings, resetVersion) { mutableStateOf(settings.useSystemWallpaper) }
+
+    SettingSwitch(
+        label = stringResource(R.string.use_system_wallpaper),
+        description = stringResource(R.string.use_system_wallpaper_description),
+        checked = useSystemWallpaper,
+        onCheckedChange = {
+            useSystemWallpaper = it
+            settings.useSystemWallpaper = it
+            onChanged()
+        }
+    )
 
     Text(stringResource(R.string.background_opacity), style = MaterialTheme.typography.titleSmall)
     val opacityDescription = stringResource(R.string.background_opacity_semantics)
