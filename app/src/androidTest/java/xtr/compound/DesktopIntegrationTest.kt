@@ -1,5 +1,6 @@
 package xtr.compound
 
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,11 +14,14 @@ import androidx.test.core.app.ActivityScenario
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.performClick
-import com.google.android.material.slider.Slider
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
@@ -145,64 +149,67 @@ class DesktopIntegrationTest {
                     activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 clickDesktopControl(R.string.open_start_menu)
-                clickDesktopControl(R.string.compound_settings)
-                // AlertDialog's OnShow handler installs the background and reset action asynchronously.
-                instrumentation.waitForIdleSync()
-                scenario.onActivity { activity ->
-                    val field = CompoundSettingsDialog::class.java.getDeclaredField("activeDialog").apply { isAccessible = true }
-                    val dialog = field.get(CompoundSettingsDialog) as androidx.appcompat.app.AlertDialog
-                    val root = dialog.window!!.decorView
-                    val panel = root.findViewById<FrameLayout>(android.R.id.content)
-                    val dialogBackground = panel.getChildAt(0) as android.widget.ImageView
-                    assertNotNull("Settings must own a blur/tint background", dialogBackground.background)
-                    fun findSlider(view: View, description: String): Slider? {
-                        if (view is Slider && view.contentDescription == description) return view
-                        if (view is android.view.ViewGroup) {
-                            for (i in 0 until view.childCount) findSlider(view.getChildAt(i), description)?.let { return it }
+                clickDesktopControl(R.string.appearance_settings)
+                composeRule.onNode(hasText("Show all Android tasks")).assertDoesNotExist()
+                val opacity = composeRule.onNode(hasContentDescription("Background opacity, percent"))
+                val blur = composeRule.onNode(hasContentDescription("Background blur radius, dp"))
+                for (percent in listOf(100, 0)) {
+                    opacity.performSemanticsAction(SemanticsActions.SetProgress) { it(percent.toFloat()) }
+                    assertEquals(percent, settings.opacityPercent)
+                    scenario.onActivity { activity ->
+                        val field = CompoundSettingsDialog::class.java.getDeclaredField("activeDialog")
+                            .apply { isAccessible = true }
+                        val dialog = field.get(CompoundSettingsDialog) as Dialog
+                        val background = dialog.findViewById<View>(R.id.settingsDialogBackground)
+                        assertNotNull("Settings must own a blur/tint background", background.background)
+                        (background.background as? android.graphics.drawable.GradientDrawable)?.let {
+                            assertEquals(percent * 255 / 100, it.color!!.defaultColor ushr 24)
                         }
-                        return null
+                        assertEquals(1f, activity.findViewById<View>(R.id.startMenu).alpha, 0f)
                     }
-                    val opacity = requireNotNull(findSlider(root, "Background opacity, percent"))
-                    val blur = requireNotNull(findSlider(root, "Background blur radius, dp"))
-                    fun setProgress(slider: Slider, value: Int) {
-                        slider.isFocusableInTouchMode = true
-                        slider.requestFocus()
-                        val increase = value > slider.value
-                        val rtl = slider.layoutDirection == View.LAYOUT_DIRECTION_RTL
-                        val key = if (increase != rtl) android.view.KeyEvent.KEYCODE_DPAD_RIGHT else android.view.KeyEvent.KEYCODE_DPAD_LEFT
-                        repeat(102) {
-                            slider.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, key))
-                            slider.dispatchKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, key))
-                        }
-                        assertEquals("Keyboard progress must update the slider", value.toFloat(), slider.value, 0f)
-                    }
-                    setProgress(opacity, 100)
-                    assertEquals(100, settings.opacityPercent)
-                    (dialogBackground.background as? android.graphics.drawable.GradientDrawable)?.let {
-                        assertEquals(255, it.color!!.defaultColor ushr 24)
-                    }
-                    setProgress(opacity, 0)
-                    assertEquals(0, settings.opacityPercent)
-                    (dialogBackground.background as? android.graphics.drawable.GradientDrawable)?.let {
-                        assertEquals(0, it.color!!.defaultColor ushr 24)
-                    }
-                    assertTrue("Legacy fallback must keep radius adjustable", blur.isEnabled)
-                    run {
-                        setProgress(blur, 100); assertEquals(100, settings.blurRadiusDp)
-                        setProgress(blur, 0); assertEquals(0, settings.blurRadiusDp)
-                    }
-                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).performClick()
-                    assertEquals(80, settings.opacityPercent)
-                    assertEquals(25, settings.blurRadiusDp)
-                    assertTrue("Reset appearance must preserve taskbar scope", settings.showAllTasks)
-                    assertEquals(1f, activity.findViewById<View>(R.id.startMenu).alpha, 0f)
-                    dialog.dismiss()
                 }
+                blur.assertIsEnabled()
+                for (radius in listOf(100, 0)) {
+                    blur.performSemanticsAction(SemanticsActions.SetProgress) { it(radius.toFloat()) }
+                    assertEquals(radius, settings.blurRadiusDp)
+                }
+                composeRule.onNode(hasText("Reset appearance")).performClick()
+                assertEquals(AppearanceSettings.DEFAULT_OPACITY, settings.opacityPercent)
+                assertEquals(AppearanceSettings.DEFAULT_BLUR_RADIUS, settings.blurRadiusDp)
+                assertTrue("Reset appearance must preserve taskbar scope", settings.showAllTasks)
+                composeRule.onNode(hasText("Close")).performClick()
             }
         } finally {
             settings.opacityPercent = oldOpacity
             settings.blurRadiusDp = oldBlur
             settings.showAllTasks = oldScope
+        }
+    }
+
+    @Test fun configureDialogAppliesTaskbarSettings() {
+        val settings = AppearanceSettings(context)
+        val oldScope = settings.showAllTasks
+        val oldIconsOnly = settings.taskbarIconsOnly
+        try {
+            settings.showAllTasks = false
+            settings.taskbarIconsOnly = false
+            ActivityScenario.launch(MainActivity::class.java).use {
+                clickDesktopControl(R.string.open_start_menu)
+                clickDesktopControl(R.string.configure_settings)
+                composeRule.onNode(hasText("Reset appearance")).assertDoesNotExist()
+                composeRule.onNode(hasText("Show all Android tasks")).performClick()
+                assertTrue(settings.showAllTasks)
+                composeRule.onNode(hasText("Show taskbar icons only")).performClick()
+                assertTrue(settings.taskbarIconsOnly)
+                composeRule.onNode(hasText("Close")).performClick()
+                clickDesktopControl(R.string.configure_settings)
+                composeRule.onNode(hasText("Show all Android tasks")).assertIsOn()
+                composeRule.onNode(hasText("Show taskbar icons only")).assertIsOn().performClick()
+                assertFalse(settings.taskbarIconsOnly)
+            }
+        } finally {
+            settings.showAllTasks = oldScope
+            settings.taskbarIconsOnly = oldIconsOnly
         }
     }
 

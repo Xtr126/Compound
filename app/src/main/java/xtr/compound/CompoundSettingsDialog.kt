@@ -1,33 +1,63 @@
 package xtr.compound
 
-import android.content.Intent
-import android.provider.Settings
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.slider.Slider
-import com.google.android.material.switchmaterial.SwitchMaterial
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 
-/** A small, self-contained appearance dialog so the app's existing layouts need not change. */
+/** Compose settings pages hosted in an AlertDialog window with the existing snapshot/live blur layer. */
 object CompoundSettingsDialog {
+    enum class Section { APPEARANCE, CONFIGURE }
+
     private var activeController: Controller? = null
     private var activeDialog: AlertDialog? = null
 
-    class Controller internal constructor(
+    private class Controller(
         private val blurAvailable: () -> Boolean,
-        private val blurSlider: Slider,
-        private val availabilityText: TextView,
+        private val setAvailabilityMessageVisible: (Boolean) -> Unit,
         private val refreshTint: () -> Unit
     ) {
         fun refreshAvailability() {
-            val available = blurAvailable()
-            blurSlider.isEnabled = true
-            availabilityText.visibility = if (available) View.GONE else View.VISIBLE
+            setAvailabilityMessageVisible(!blurAvailable())
         }
 
         fun refreshAppearance() {
@@ -36,17 +66,14 @@ object CompoundSettingsDialog {
         }
     }
 
-    /** Refresh the currently displayed dialog after the system's blur state changes. */
     fun refreshAvailability() {
         activeController?.refreshAvailability()
     }
 
-    /** Reapply theme-derived blur tint after an in-place light/dark mode change. */
     fun refreshAppearance() {
         activeController?.refreshAppearance()
     }
 
-    /** Dismiss the current dialog, if any, for the owning activity's teardown. */
     fun dismiss() {
         activeDialog?.dismiss()
         activeDialog = null
@@ -56,152 +83,76 @@ object CompoundSettingsDialog {
     fun show(
         activity: AppCompatActivity,
         settings: AppearanceSettings,
-        blurAvailable: () -> Boolean,
         onChanged: () -> Unit,
-        onSetup: () -> Unit
-    ): Controller {
+        onSetup: () -> Unit,
+        onDeviceSettings: () -> Unit,
+        section: Section = Section.APPEARANCE
+    ) {
         dismiss()
         var dialogBlur: LiveBackgroundBlur? = null
+        var availabilityMessageVisible by mutableStateOf(false)
+        var resetVersion by mutableIntStateOf(0)
+
         fun applyChanges() {
             onChanged()
             dialogBlur?.update(settings.opacityPercent, settings.blurRadiusDp)
         }
-        val density = activity.resources.displayMetrics.density
-        val content = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
-            background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(activity.getColor(R.color.settingsDialogControlsSurface))
-                cornerRadius = 16 * density
-            }
-        }
-        fun text(label: String, description: String? = null) = TextView(activity).apply {
-            text = label
-            contentDescription = description ?: label
-            setTextColor(activity.getColor(R.color.compoundOnSurface))
-            setPadding(0, (8 * density).toInt(), 0, (4 * density).toInt())
-        }
-        fun slider(description: String) = Slider(activity).apply {
-            valueFrom = 0f
-            valueTo = 100f
-            stepSize = 1f
-            contentDescription = description
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
 
-        val scope = SwitchMaterial(activity).apply {
-            text = "Show all Android tasks"
-            contentDescription = "Show all Android tasks. Off applies the taskbar only to Compound."
-            isChecked = settings.showAllTasks
-            setOnCheckedChangeListener { _, checked ->
-                settings.showAllTasks = checked
-                applyChanges()
-            }
-        }
-        content.addView(scope)
-        content.addView(text("When off, Compound shows only its own windows."))
-        val iconsOnly = SwitchMaterial(activity).apply {
-            text = "Show taskbar icons only"
-            contentDescription = "Show taskbar app icons without labels, centered with an indicator below the active task"
-            isChecked = settings.taskbarIconsOnly
-            setOnCheckedChangeListener { _, checked ->
-                settings.taskbarIconsOnly = checked
-                onChanged()
-            }
-        }
-        content.addView(iconsOnly)
-        content.addView(text("Background opacity"))
-        val opacityValue = text("${settings.opacityPercent}%", "Opacity ${settings.opacityPercent} percent")
-        val opacity = slider("Background opacity, percent").apply {
-            value = settings.opacityPercent.toFloat()
-            addOnChangeListener { _, value, fromUser ->
-                val percent = value.toInt()
-                opacityValue.text = "$percent%"
-                opacityValue.contentDescription = "Opacity $percent percent"
-                if (fromUser) {
-                    settings.opacityPercent = percent
-                    applyChanges()
+        lateinit var dialog: AlertDialog
+        val content = ComposeView(activity).apply {
+            setContent {
+                DesktopTheme {
+                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                        SettingsPage(
+                            section = section,
+                            settings = settings,
+                            availabilityMessageVisible = availabilityMessageVisible,
+                            resetVersion = resetVersion,
+                            onChanged = ::applyChanges,
+                            onSetup = onSetup,
+                            onDeviceSettings = onDeviceSettings,
+                            onReset = {
+                                settings.resetAppearance()
+                                resetVersion++
+                                applyChanges()
+                            },
+                            onClose = { dialog.dismiss() }
+                        )
+                    }
                 }
             }
         }
-        content.addView(opacity)
-        content.addView(opacityValue)
-
-        content.addView(text("Background blur"))
-        val blurValue = text("${settings.blurRadiusDp} dp", "Background blur ${settings.blurRadiusDp} dp")
-        val blur = slider("Background blur radius, dp").apply {
-            value = settings.blurRadiusDp.toFloat()
-            addOnChangeListener { _, value, fromUser ->
-                val radius = value.toInt()
-                blurValue.text = "$radius dp"
-                blurValue.contentDescription = "Background blur $radius dp"
-                if (fromUser) {
-                    settings.blurRadiusDp = radius
-                    applyChanges()
-                }
-            }
-        }
-        content.addView(blur)
-        content.addView(blurValue)
-        val availability = text("Live blur is unavailable. Using legacy snapshot blur; backgrounds refresh when opened.")
-        availability.contentDescription = availability.text
-        content.addView(availability)
-
-        val actions = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL }
-        actions.addView(Button(activity).apply {
-            text = "Device settings"
-            contentDescription = "Open device settings"
-            setOnClickListener {
-                activity.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        actions.addView(Button(activity).apply {
-            text = "Shizuku setup"
-            contentDescription = "Open Shizuku setup"
-            setOnClickListener { onSetup() }
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        content.addView(actions)
-
-        val scroll = ScrollView(activity).apply { addView(content) }
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(activity)
-            .setTitle("Compound settings")
-            .setView(scroll)
-            .setNegativeButton("Close", null)
-            .setNeutralButton("Reset appearance", null)
+        dialog = AlertDialog.Builder(activity)
+            .setTitle(when (section) {
+                Section.APPEARANCE -> activity.getString(R.string.appearance_settings)
+                Section.CONFIGURE -> activity.getString(R.string.configure_settings)
+            })
+            .setView(content)
             .create()
+
         dialog.setOnShowListener {
             val dialogWindow = requireNotNull(dialog.window)
-            dialogWindow.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-            val panel = dialogWindow.decorView.findViewById<android.widget.FrameLayout>(android.R.id.content)
-            panel.background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(android.graphics.Color.TRANSPARENT)
-                cornerRadius = 28 * density
+            dialogWindow.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            val panel = dialogWindow.decorView.findViewById<FrameLayout>(android.R.id.content)
+            panel.background = GradientDrawable().apply {
+                setColor(Color.TRANSPARENT)
+                cornerRadius = 28 * activity.resources.displayMetrics.density
             }
             panel.clipToOutline = true
-            val background = android.widget.ImageView(activity).apply {
+            val background = ImageView(activity).apply {
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                scaleType = android.widget.ImageView.ScaleType.FIT_XY
+                id = R.id.settingsDialogBackground
+                scaleType = ImageView.ScaleType.FIT_XY
             }
-            panel.addView(background, 0, android.widget.FrameLayout.LayoutParams(
+            panel.addView(background, 0, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
             val legacy = LegacyBackgroundBlur(background, panel, activity.window, hideOverlay = false)
             dialogBlur = LiveBackgroundBlur(background, 28f, legacy).also { helper ->
                 helper.onAvailabilityChanged = { refreshAvailability() }
                 helper.update(settings.opacityPercent, settings.blurRadiusDp)
             }
-            refreshAvailability()
             background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
                 if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacy.refresh()
-            }
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                settings.resetAppearance()
-                opacity.value = AppearanceSettings.DEFAULT_OPACITY.toFloat()
-                blur.value = AppearanceSettings.DEFAULT_BLUR_RADIUS.toFloat()
-                opacityValue.text = "${AppearanceSettings.DEFAULT_OPACITY}%"
-                opacityValue.contentDescription = "Opacity ${AppearanceSettings.DEFAULT_OPACITY} percent"
-                blurValue.text = "${AppearanceSettings.DEFAULT_BLUR_RADIUS} dp"
-                blurValue.contentDescription = "Background blur ${AppearanceSettings.DEFAULT_BLUR_RADIUS} dp"
-                applyChanges()
             }
         }
         dialog.setOnDismissListener {
@@ -213,15 +164,175 @@ object CompoundSettingsDialog {
             }
         }
         dialog.show()
-        return Controller(
-            { blurAvailable() && dialogBlur?.isAvailable == true },
-            blur,
-            availability,
-            { dialogBlur?.update(settings.opacityPercent, settings.blurRadiusDp) }
-        ).also {
-            activeDialog = dialog
-            activeController = it
-            it.refreshAvailability()
+
+        activeController = Controller(
+            blurAvailable = { dialogBlur?.isAvailable == true },
+            setAvailabilityMessageVisible = { availabilityMessageVisible = it },
+            refreshTint = { dialogBlur?.update(settings.opacityPercent, settings.blurRadiusDp) }
+        )
+        activeDialog = dialog
+        activeController?.refreshAvailability()
+    }
+}
+
+@Composable
+private fun SettingsPage(
+    section: CompoundSettingsDialog.Section,
+    settings: AppearanceSettings,
+    availabilityMessageVisible: Boolean,
+    onChanged: () -> Unit,
+    onSetup: () -> Unit,
+    onDeviceSettings: () -> Unit,
+    onReset: () -> Unit,
+    onClose: () -> Unit,
+    resetVersion: Int
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .background(colorResource(R.color.settingsDialogControlsSurface), RoundedCornerShape(16.dp))
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (section == CompoundSettingsDialog.Section.APPEARANCE) {
+            AppearancePage(settings, availabilityMessageVisible, onChanged, resetVersion)
+        } else {
+            ConfigurePage(settings, onChanged, onDeviceSettings, onSetup)
         }
+        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+            if (section == CompoundSettingsDialog.Section.APPEARANCE) {
+                TextButton(onClick = onReset) { Text(stringResource(R.string.reset_appearance)) }
+            }
+            TextButton(onClick = onClose) { Text(stringResource(R.string.close)) }
+        }
+    }
+}
+
+@Composable
+private fun AppearancePage(
+    settings: AppearanceSettings,
+    availabilityMessageVisible: Boolean,
+    onChanged: () -> Unit,
+    resetVersion: Int
+) {
+    var opacity by remember(settings, resetVersion) { mutableFloatStateOf(settings.opacityPercent.toFloat()) }
+    var radius by remember(settings, resetVersion) { mutableFloatStateOf(settings.blurRadiusDp.toFloat()) }
+
+    Text(stringResource(R.string.background_opacity), style = MaterialTheme.typography.titleSmall)
+    val opacityDescription = stringResource(R.string.background_opacity_semantics)
+    val opacityValueDescription = stringResource(R.string.opacity_percent_description, opacity.toInt())
+    Slider(
+        value = opacity,
+        onValueChange = {
+            opacity = it
+            val percent = it.toInt()
+            if (settings.opacityPercent != percent) {
+                settings.opacityPercent = percent
+                onChanged()
+            }
+        },
+        valueRange = 0f..100f,
+        steps = 99,
+        modifier = Modifier.semantics {
+            contentDescription = opacityDescription
+        }
+    )
+    Text(
+        text = stringResource(R.string.opacity_percent_value, opacity.toInt()),
+        modifier = Modifier.semantics {
+            contentDescription = opacityValueDescription
+        }
+    )
+
+    Text(stringResource(R.string.background_blur), style = MaterialTheme.typography.titleSmall)
+    val blurDescription = stringResource(R.string.background_blur_radius_semantics)
+    val radiusDescription = stringResource(R.string.blur_dp_description, radius.toInt())
+    Slider(
+        value = radius,
+        onValueChange = {
+            radius = it
+            val value = it.toInt()
+            if (settings.blurRadiusDp != value) {
+                settings.blurRadiusDp = value
+                onChanged()
+            }
+        },
+        valueRange = 0f..100f,
+        steps = 99,
+        modifier = Modifier.semantics {
+            contentDescription = blurDescription
+        }
+    )
+    Text(
+        text = stringResource(R.string.blur_dp_value, radius.toInt()),
+        modifier = Modifier.semantics {
+            contentDescription = radiusDescription
+        }
+    )
+    if (availabilityMessageVisible) {
+        Text(stringResource(R.string.live_blur_unavailable))
+    }
+}
+
+@Composable
+private fun ConfigurePage(
+    settings: AppearanceSettings,
+    onChanged: () -> Unit,
+    onDeviceSettings: () -> Unit,
+    onSetup: () -> Unit
+) {
+    var showAllTasks by remember(settings) { mutableStateOf(settings.showAllTasks) }
+    var iconsOnly by remember(settings) { mutableStateOf(settings.taskbarIconsOnly) }
+
+    SettingSwitch(
+        label = stringResource(R.string.show_all_android_tasks),
+        description = stringResource(R.string.show_all_android_tasks_description),
+        checked = showAllTasks,
+        onCheckedChange = {
+            showAllTasks = it
+            settings.showAllTasks = it
+            onChanged()
+        }
+    )
+    Text(stringResource(R.string.show_all_android_tasks_help), style = MaterialTheme.typography.bodySmall)
+    SettingSwitch(
+        label = stringResource(R.string.show_taskbar_icons_only),
+        description = stringResource(R.string.show_taskbar_icons_only_description),
+        checked = iconsOnly,
+        onCheckedChange = {
+            iconsOnly = it
+            settings.taskbarIconsOnly = it
+            onChanged()
+        }
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Button(onClick = onDeviceSettings, modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.device_settings))
+        }
+        Button(onClick = onSetup, modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.shizuku_setup))
+        }
+    }
+}
+
+@Composable
+private fun SettingSwitch(
+    label: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = description }
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, modifier = Modifier.weight(1f).padding(end = 12.dp))
+        Switch(checked = checked, onCheckedChange = null)
     }
 }

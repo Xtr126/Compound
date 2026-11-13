@@ -20,7 +20,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -54,7 +56,8 @@ fun StartMenuContent(
     windows: DesktopWindowController,
     powerEnabled: Boolean,
     onSettings: () -> Unit,
-    onCompoundSettings: () -> Unit,
+    onAppearance: () -> Unit,
+    onConfigure: () -> Unit,
     onFiles: () -> Unit,
     onPower: () -> Unit
 ) {
@@ -87,12 +90,13 @@ fun StartMenuContent(
             colors = CardDefaults.cardColors(containerColor = cardColor)
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 6.dp),
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 MenuAction(R.drawable.outline_settings_24, stringResource(R.string.device_settings), onSettings)
-                MenuAction(R.drawable.baseline_edit_24, stringResource(R.string.compound_settings), onCompoundSettings)
+                MenuAction(R.drawable.ic_palette_24, stringResource(R.string.appearance_settings), onAppearance)
+                MenuAction(R.drawable.ic_tune_24, stringResource(R.string.configure_settings), onConfigure)
                 MenuAction(R.drawable.baseline_folder_open_24, stringResource(R.string.open_files), onFiles)
                 MenuAction(android.R.drawable.ic_lock_power_off, stringResource(R.string.power_menu), onPower, enabled = powerEnabled)
             }

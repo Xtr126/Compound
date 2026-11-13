@@ -1,0 +1,20 @@
+<resources>
+    <string name="close">Close</string>
+    <string name="reset_appearance">Reset appearance</string>
+    <string name="background_opacity">Background opacity</string>
+    <string name="background_opacity_semantics">Background opacity, percent</string>
+    <string name="opacity_percent_value">%1$d%%</string>
+    <string name="opacity_percent_description">Opacity %1$d percent</string>
+    <string name="background_blur">Background blur</string>
+    <string name="background_blur_radius">Background blur radius</string>
+    <string name="background_blur_radius_semantics">Background blur radius, dp</string>
+    <string name="blur_dp_value">%1$d dp</string>
+    <string name="blur_dp_description">Background blur %1$d dp</string>
+    <string name="live_blur_unavailable">Live blur is unavailable for this dialog. Its background refreshes when opened.</string>
+    <string name="show_all_android_tasks">Show all Android tasks</string>
+    <string name="show_all_android_tasks_description">Show all Android tasks. Off applies the taskbar only to Compound.</string>
+    <string name="show_all_android_tasks_help">When off, Compound shows only its own windows.</string>
+    <string name="show_taskbar_icons_only">Show taskbar icons only</string>
+    <string name="show_taskbar_icons_only_description">Show taskbar app icons without labels, centered with an indicator below the active task</string>
+    <string name="shizuku_setup">Shizuku setup</string>
+</resources>

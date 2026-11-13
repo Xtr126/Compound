@@ -96,8 +96,6 @@ class MainActivity : AppCompatActivity() {
         binding.background.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) legacyMenuBlur.refresh()
         }
-        taskbarBlur.onAvailabilityChanged = { refreshAppearanceAvailability() }
-        menuBlur.onAvailabilityChanged = { refreshAppearanceAvailability() }
         applyAppearance()
         binding.appsContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             val density = resources.displayMetrics.density
@@ -146,11 +144,8 @@ class MainActivity : AppCompatActivity() {
                     windows = windows,
                     powerEnabled = startMenuPowerEnabled,
                     onSettings = { launchSafely(Intent(Settings.ACTION_SETTINGS)) },
-                    onCompoundSettings = {
-                        CompoundSettingsDialog.show(this, appearance, { taskbarBlur.isAvailable && menuBlur.isAvailable }, {
-                            applyAppearance(); taskbarIconsOnly = appearance.taskbarIconsOnly; renderTaskbar(); refreshTasks()
-                        }, ::showSetup)
-                    },
+                    onAppearance = { showSettings(CompoundSettingsDialog.Section.APPEARANCE) },
+                    onConfigure = { showSettings(CompoundSettingsDialog.Section.CONFIGURE) },
                     onFiles = {
                         launchSafely(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                             addCategory(Intent.CATEGORY_OPENABLE); type = "*/*"
@@ -162,6 +157,22 @@ class MainActivity : AppCompatActivity() {
         }
         RemoteServiceHelper.addStateListener(stateListener)
         RemoteServiceHelper.initialize(applicationContext)
+    }
+
+    private fun showSettings(section: CompoundSettingsDialog.Section) {
+        CompoundSettingsDialog.show(
+            activity = this,
+            settings = appearance,
+            onChanged = {
+                applyAppearance()
+                taskbarIconsOnly = appearance.taskbarIconsOnly
+                renderTaskbar()
+                refreshTasks()
+            },
+            onSetup = ::showSetup,
+            onDeviceSettings = { launchSafely(Intent(Settings.ACTION_SETTINGS)) },
+            section = section
+        )
     }
 
     private fun openClock() {
@@ -178,10 +189,6 @@ class MainActivity : AppCompatActivity() {
     private fun applyAppearance() {
         taskbarBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
         menuBlur.update(appearance.opacityPercent, appearance.blurRadiusDp)
-    }
-
-    private fun refreshAppearanceAvailability() {
-        if (!destroyed) CompoundSettingsDialog.refreshAvailability()
     }
 
     private fun onServiceState(state: RemoteServiceHelper.State) {

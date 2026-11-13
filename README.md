@@ -9,13 +9,13 @@ It hosts apps on virtual displays, with draggable/resizable windows and a runnin
 
 Install the APK from the latest GitHub Release, or download the debug APK from a pull request's **Android build** GitHub Actions artifact. You can also build it locally. Compound uses its system-app service when installed with the necessary platform privileges; otherwise it tries root first, then Shizuku.
 
-For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), open it, and follow its wireless-debugging startup instructions. Open Compound, choose **Grant access**, and accept Shizuku's permission dialog. Compound uses Shizuku's v11+ runtime permission API; update older Shizuku versions before granting access. If Shizuku reports that permission was previously denied, grant Compound access from Shizuku and retry. Non-root Shizuku normally needs restarting after a device reboot. Setup explains missing permissions or connection errors and offers retry. Open it again from Compound settings or by holding the start-menu button.
+For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), open it, and follow its wireless-debugging startup instructions. Open Compound, choose **Grant access**, and accept Shizuku's permission dialog. Compound uses Shizuku's v11+ runtime permission API; update older Shizuku versions before granting access. If Shizuku reports that permission was previously denied, grant Compound access from Shizuku and retry. Non-root Shizuku normally needs restarting after a device reboot. Setup explains missing permissions or connection errors and offers retry. Open it again from **Configure** or by holding the start-menu button.
 
 ## Desktop controls
 
 - Launch apps from the start menu. Drag their title bars, resize from the left or right edge and top or bottom edge, or drag any corner to resize width and height together. Screen-reader users can focus a resize handle and use its custom actions to change the window by 32 dp.
 - Minimize preserves the app session; select its taskbar entry to restore it.
-- Taskbar entries use each app's display name. In Compound settings, enable **Show taskbar icons only** to center icons in the taskbar; the active task has a bar beneath its icon. In icon-only mode, long-press an icon to close that task.
+- Taskbar entries use each app's display name. In **Configure**, enable **Show taskbar icons only** to center icons in the taskbar; the active task has a bar beneath its icon. In icon-only mode, long-press an icon to close that task.
 - Maximize toggles between workspace size and the saved normal bounds.
 - Close removes the hosted task(s) and releases its virtual display. Closing an external task removes that task, without force-stopping its package.
 - The Home button minimizes all Compound windows. Back targets the focused hosted app; Recents refreshes the running-task list.
@@ -23,9 +23,9 @@ For non-root devices, [install Shizuku](https://shizuku.rikka.app/download/), op
 - The taskbar Wi-Fi button opens Android's Wi-Fi panel, falling back to Wi-Fi settings when the panel is unavailable. The battery button opens the system battery/power overview, falling back to battery saver settings and then general Settings if needed.
 - The notification button opens Android's notification shade, including Quick Settings where the device provides it. This uses the privileged service connection, so system-app/root/Shizuku access must be available; unsupported or denied status-bar calls show an error.
 
-Open **Compound settings** using the start-menu gear. Taskbar scope defaults to **Compound windows**; opt into **All Android tasks** to also focus and close accessible tasks on their existing displays. Home/recents and Compound itself are excluded. Android/OEM task permissions can restrict these operations.
+Open **Configure** from the Start menu to change taskbar settings or access Shizuku setup. Taskbar scope defaults to **Compound windows**; opt into **All Android tasks** to also focus and close accessible tasks on their existing displays. Home/recents and Compound itself are excluded. Android/OEM task permissions can restrict these operations.
 
-Appearance sliders apply immediately to the taskbar, start-menu and Compound settings dialog backgrounds:
+Open **Appearance** from the Start menu to adjust the taskbar, Start menu, and settings dialog backgrounds. Changes apply immediately.
 
 | Setting | Range | Default |
 | --- | --- | --- |

@@ -49,7 +49,8 @@ adb shell am instrument -w -e class 'xtr.compound.DesktopIntegrationTest#privile
 | Test | Purpose / preconditions |
 | --- | --- |
 | `appearancePersistsClampsAndResetPreservesTaskScope` | Real preference defaults, clamping, reopening and reset; restores previous values. No Shizuku needed. |
-| `appearanceDialogSlidersApplyImmediately` | Opens the real settings dialog, drives sliders with keyboard events, checks saved endpoints/reset and unchanged foreground alpha. Radius controls remain enabled for legacy blur and are always exercised. Waits for dialog OnShow before driving reset. |
+| `appearanceDialogSlidersApplyImmediately` | Opens Appearance from the Start menu and uses Compose slider semantics to verify saved endpoints, reset, and foreground alpha. |
+| `configureDialogAppliesTaskbarSettings` | Opens Configure from the Start menu and verifies that task scope and icon-only changes are saved across reopening. |
 | `legacyBlurCapturesAndUpdatesOpacity` | Forces snapshot capture, opacity endpoints and stale-callback cleanup. Requires a visible unlocked window. |
 | `taskServiceErrorsSurviveBinderParcel` | Verifies service failures encode/decode as IllegalStateException through Binder Parcel format. |
 | `privilegedDisplayAttributionAndCleanupWithoutUi` | Requires authorized Shizuku. Uses a SurfaceTexture to launch Settings, resize, detach/attach, enumerate, focus/remove its task and release twice; useful without visible SurfaceView composition. |
@@ -121,3 +122,5 @@ The Wi-Fi/battery workstream added settings panels, fallbacks, and accessible bu
 - The Start menu workstream moved the app list, app grid, and menu actions into a `ComposeView` and retained the launcher query and window-launch callbacks.
 - The taskbar workstream moved the running-task list and system shortcuts into a second `ComposeView`.
 - Shared integration added the Compose compiler plugin, BOM, and desktop theme. Both overlays retain View-backed snapshot capture. `MainActivity` continues to coordinate privileged operations and window lifecycle.
+
+The settings workstream moved dialog controls into Compose and retained their separate blur-capable window. Activity integration split the Start menu actions, and instrumentation covers both dialogs and their saved settings.

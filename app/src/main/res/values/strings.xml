@@ -15,7 +15,8 @@
     <string name="increase_window_height">Increase window height</string>
     <string name="decrease_window_height">Decrease window height</string>
     <string name="open_start_menu">Open start menu</string>
-    <string name="compound_settings">Compound settings</string>
+    <string name="appearance_settings">Appearance</string>
+    <string name="configure_settings">Configure</string>
     <string name="device_settings">Device settings</string>
     <string name="open_files">Open files</string>
     <string name="power_menu">Power menu</string>
