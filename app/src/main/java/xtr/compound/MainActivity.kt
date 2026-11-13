@@ -400,6 +400,21 @@ class MainActivity : AppCompatActivity() {
         applyStartMenuSize()
     }
 
+    private fun applyStartMenuSize() {
+        if (binding.root.width <= 0 || binding.appsContainer.height <= 0) return
+        val density = effectiveLauncherDensity()
+        val bounds = startMenuResizeBounds()
+        val width = (appearance.startMenuWidthDp * density).toInt().coerceAtMost(bounds.first)
+        val height = (appearance.startMenuHeightDp * density).toInt().coerceAtMost(bounds.second)
+        val params = binding.startMenu.layoutParams
+        if (params.width != width || params.height != height) {
+            params.width = width
+            params.height = height
+            binding.startMenu.layoutParams = params
+        }
+    }
+
+
     private fun effectiveLauncherDensity(): Float = resources.displayMetrics.density *
         AppearanceSettings.quantizeDensityMultiplier(launcherDensityMultiplier)
 
